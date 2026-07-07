@@ -1,8 +1,20 @@
-add_executable(z_generals WIN32)
+# GeneralsX @feature android-port 06/07/2026
+# Android apps are shared libraries, not executables: SDL3's SDLActivity loads
+# libmain.so via JNI and invokes SDL_main(). On every other platform the engine
+# is a normal executable (WIN32 entry on Windows, console main elsewhere).
+if(ANDROID)
+    add_library(z_generals SHARED)
+else()
+    add_executable(z_generals WIN32)
+endif()
 
 # Use a binary name that doesn't conflict with original game.
 # GeneralsX @build BenderAI 15/02/2026 Linux branding update
-if("${CMAKE_SYSTEM}" MATCHES "Windows")
+if(ANDROID)
+    # SDL's nativeRunMain dlopens "libmain.so" and dlsyms SDL_main, so the engine
+    # .so MUST be named "main" on Android regardless of branding.
+    set_target_properties(z_generals PROPERTIES OUTPUT_NAME "main")
+elseif("${CMAKE_SYSTEM}" MATCHES "Windows")
     set_target_properties(z_generals PROPERTIES OUTPUT_NAME "generalszh${RTS_BUILD_OUTPUT_SUFFIX}")
 else()
     # GeneralsX @build BenderAI 15/02/2026 Linux branding update
@@ -33,6 +45,12 @@ target_link_libraries(z_generals PRIVATE
     z_gameenginedevice
     zi_always
 )
+
+# GeneralsX @feature android-port 06/07/2026 Android log for __android_log_print
+# and android for AAssetManager (font extraction from APK assets).
+if(ANDROID)
+    target_link_libraries(z_generals PRIVATE log android)
+endif()
 
 # Linux SDL3 windowing/input (Phase 1)
 # GeneralsX @build BenderAI 11/02/2026

@@ -77,10 +77,14 @@ enum DamageType CPP_11(: Int)
 	DAMAGE_STEALTHJET_MISSILES		= 28,
 	DAMAGE_MOLOTOV_COCKTAIL				= 29,
 	DAMAGE_COMANCHE_VULCAN				= 30,
-#if RTS_GENERALS
+	// GeneralsX @bugfix android-port 06/07/2026 FLESHY_SNIPER is referenced by
+	// the base Generals Weapon.ini (e.g. CINE_USAPathfinderSniperRifle), which
+	// the ZH engine loads alongside INIZH.big. The retail ZH build accepts this
+	// token, so the name must exist in the enum + s_bitNameList for ZH too.
+	// Previously gated behind #if RTS_GENERALS only, which caused
+	// scanIndexList to throw INI_INVALID_DATA on ZH builds loading base data.
 	DAMAGE_FLESHY_SNIPER					= 31,		// like DAMAGE_SNIPER, but (generally) does no damage to vehicles.
-#endif
-	DAMAGE_SUBDUAL_MISSILE				/*= 31*/,	///< Damage that does not kill you, but produces some special effect based on your Body Module. Separate HP from normal damage.
+	DAMAGE_SUBDUAL_MISSILE				/*= 32*/,	///< Damage that does not kill you, but produces some special effect based on your Body Module. Separate HP from normal damage.
 	DAMAGE_SUBDUAL_VEHICLE				/*= 32*/,
 	DAMAGE_SUBDUAL_BUILDING				/*= 33*/,
 	DAMAGE_SUBDUAL_UNRESISTABLE		/*= 34*/,

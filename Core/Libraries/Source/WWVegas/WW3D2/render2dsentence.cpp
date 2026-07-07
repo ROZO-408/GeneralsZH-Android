@@ -1646,7 +1646,11 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 
 #if defined(SAGE_USE_FREETYPE) && !defined(_WIN32)
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+// GeneralsX @feature android-port 06/07/2026
+// Neither iOS nor Android exposes a fontconfig-discoverable system font set the
+// engine can use, so both resolve faces from a bundled "fonts" directory below
+// the working directory (iOS: Documents/GameData; Android: internal storage).
+#if (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || defined(__ANDROID__)
 
 #include <cctype>
 #include <cstdio>
@@ -1654,13 +1658,14 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
-//	Locate_Font_FontConfig (iOS)
+//	Locate_Font_FontConfig (mobile: iOS / Android)
 //
-// iOS has no fontconfig and no user-accessible system font files. Fonts are
-// resolved from a "fonts" directory below the current working directory (the
-// app's Documents folder, where game data also lives). The requested face name
-// is normalized (lowercase, spaces stripped) and tried as <name>.ttf/.otf/.ttc;
-// arial.ttf serves as the universal fallback since the game UI is Arial-based.
+// Mobile platforms have no fontconfig and no user-accessible system font files
+// usable by this engine. Fonts are resolved from a "fonts" directory below the
+// current working directory (the app's data folder, where game data also lives).
+// The requested face name is normalized (lowercase, spaces stripped) and tried
+// as <name>.ttf/.otf/.ttc; arial.ttf serves as the universal fallback since the
+// game UI is Arial-based.
 ////////////////////////////////////////////////////////////////////////////////////
 const char *
 FontCharsClass::Locate_Font_FontConfig (const char *font_name)

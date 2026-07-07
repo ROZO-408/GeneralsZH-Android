@@ -23,11 +23,16 @@ if(NOT SAGE_USE_GLM)
     message(FATAL_ERROR "GLM is required for d3dx8 compatibility layer")
 endif()
 
-find_package(glm CONFIG REQUIRED)
+# GeneralsX @feature android-port 06/07/2026 Android provides glm::glm via
+# FetchContent (cmake/android-deps.cmake); skip find_package which needs a config.
+if(NOT TARGET glm::glm)
+    find_package(glm CONFIG REQUIRED)
+endif()
 target_link_libraries(d3dx8 PUBLIC glm::glm)
 
 # GeneralsX @build felipebraz 20/06/2025 GLI causes make_vec4 ambiguity with Apple Clang - only link on Windows
-if(NOT APPLE)
+# GeneralsX @feature android-port 06/07/2026 Android: skip GLI too (same Clang ambiguity + no vcpkg)
+if(NOT APPLE AND NOT ANDROID)
     find_package(gli CONFIG REQUIRED)
     target_link_libraries(d3dx8 PUBLIC gli)
 endif()
@@ -74,8 +79,10 @@ else()
     if(NOT dxvk_SOURCE_DIR)
         message(FATAL_ERROR "DXVK not fetched! Ensure SAGE_USE_DX8=OFF and cmake/dx8.cmake was included")
     endif()
-    if(APPLE)
-        # macOS: DXVK built from git source -- Wine-style include/native layout
+    if(APPLE OR ANDROID)
+        # macOS/iOS/Android: DXVK built from git source -- Wine-style include/native layout
+        # GeneralsX @feature android-port 06/07/2026 Android uses the same DXVK fork
+        # source layout as Apple (references/fbraz3-dxvk/include/native/...).
         target_include_directories(d3d8lib INTERFACE
             ${dxvk_SOURCE_DIR}/include/native
             ${dxvk_SOURCE_DIR}/include/native/windows

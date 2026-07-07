@@ -97,6 +97,13 @@
 #include "bound.h"
 #include "DbgHelpGuard.h"
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOG_ERROR(...) __android_log_print(ANDROID_LOG_ERROR, "GeneralsX", __VA_ARGS__)
+#else
+#define LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)
+#endif
+
 #include "shdlib.h"
 
 const int DEFAULT_RESOLUTION_WIDTH = 640;
@@ -590,7 +597,13 @@ bool DX8Wrapper::Init(void * hwnd, bool lite)
 			fprintf(stderr, "ERROR: DX8Wrapper::Init() - dlerror(): %s\n", error ? error : "unknown");
 		}
 #else
-		fprintf(stderr, "DEBUG: DX8Wrapper::Init() - Loading libdxvk_d3d8.so (Linux)...\n");
+		// GeneralsX @feature android-port 06/07/2026
+		// Android + Linux: the loader's search path includes the app's native
+		// library directory (Android) or LD_LIBRARY_PATH (Linux), so the bare
+		// soname resolves. Android's linker namespace requires the .so to ship
+		// inside the APK's lib/<abi>/ and be registered via System.loadLibrary
+		// (the SDLActivity does this) before dlopen() can see it.
+		fprintf(stderr, "DEBUG: DX8Wrapper::Init() - Loading libdxvk_d3d8.so...\n");
 		D3D8Lib = LoadLibrary("libdxvk_d3d8.so");
 		fprintf(stderr, "DEBUG: DX8Wrapper::Init() - LoadLibrary result: %p\n", (void*)D3D8Lib);
 		if (D3D8Lib == nullptr) {
@@ -870,6 +883,18 @@ bool DX8Wrapper::Create_Device()
 	// the graphics driver from potentially loading the old game dbghelp.dll and then crashing the game process.
 	DbgHelpGuard dbgHelpGuard;
 
+	#ifdef __ANDROID__
+	LOG_ERROR("=== CreateDevice PresentParameters ===");
+	LOG_ERROR("  BackBufferWidth=%u  BackBufferHeight=%u", _PresentParameters.BackBufferWidth, _PresentParameters.BackBufferHeight);
+	LOG_ERROR("  BackBufferFormat=%d  BackBufferCount=%u", (int)_PresentParameters.BackBufferFormat, _PresentParameters.BackBufferCount);
+	LOG_ERROR("  MultiSampleType=%d  SwapEffect=%d", (int)_PresentParameters.MultiSampleType, (int)_PresentParameters.SwapEffect);
+	LOG_ERROR("  hDeviceWindow=%p  Windowed=%d", (void*)_PresentParameters.hDeviceWindow, _PresentParameters.Windowed);
+	LOG_ERROR("  EnableAutoDepthStencil=%d  AutoDepthStencilFormat=%d", _PresentParameters.EnableAutoDepthStencil, (int)_PresentParameters.AutoDepthStencilFormat);
+	LOG_ERROR("  FullScreen_RefreshRateInHz=%u  FullScreen_PresentationInterval=%u", _PresentParameters.FullScreen_RefreshRateInHz, _PresentParameters.FullScreen_PresentationInterval);
+	LOG_ERROR("  Flags=%u  CurRenderDevice=%d  VertexProcessing=0x%X", _PresentParameters.Flags, CurRenderDevice, Vertex_Processing_Behavior);
+	LOG_ERROR("=======================================");
+	#endif
+
 	HRESULT hr=D3DInterface->CreateDevice
 	(
 		CurRenderDevice,
@@ -882,6 +907,7 @@ bool DX8Wrapper::Create_Device()
 
 	if (FAILED(hr))
 	{
+		LOG_ERROR("ERROR: D3DInterface->CreateDevice failed with HRESULT: 0x%08X\n", (unsigned int)hr);
 		// The device selection may fail because the device lied that it supports 32 bit zbuffer with 16 bit
 		// display. This happens at least on Voodoo2.
 
@@ -905,6 +931,7 @@ bool DX8Wrapper::Create_Device()
 
 			if (FAILED(hr))
 			{
+				LOG_ERROR("ERROR: D3DInterface->CreateDevice (nested) failed with HRESULT: 0x%08X\n", (unsigned int)hr);
 				return false;
 			}
         }
@@ -1320,8 +1347,8 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	_PresentParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;//IsWindowed ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_FLIP;		// Shouldn't this be D3DSWAPEFFECT_FLIP?
 	_PresentParameters.hDeviceWindow = _Hwnd;
 	#ifndef _WIN32
-	// GeneralsX @bugfix xorza 14/04/2026 Force DXVK to use windowed presentation mode on Linux.
-	// DXVK's SDL3 WSI calls SDL_SetWindowPosition during fullscreen entry which Wayland rejects.
+	// GeneralsX @bugfix xorza 14/04/2026 Force DXVK to use windowed presentation mode on non-Windows.
+	// DXVK's SDL3 WSI has no concept of Win32 fullscreen on Linux/macOS/Android/iOS.
 	// SDL3 native fullscreen is applied separately after device creation (see W3DDisplay::init).
 	_PresentParameters.Windowed = TRUE;
 	#else
@@ -1339,11 +1366,26 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	** - if in windowed mode, the backbuffer must use the current display format.
 	** - the depth buffer must use
 	*/
+	#ifndef _WIN32
+	// GeneralsX @bugfix tarek 07/07/2026 On non-Windows, DXVK always uses windowed presentation,
+	// so we must always use the windowed format-selection path regardless of the engine's IsWindowed state.
+	{
+	#else
 	if (IsWindowed) {
+	#endif
 
 		D3DDISPLAYMODE desktop_mode;
 		::ZeroMemory(&desktop_mode, sizeof(D3DDISPLAYMODE));
 		D3DInterface->GetAdapterDisplayMode( CurRenderDevice, &desktop_mode );
+
+		#ifdef __ANDROID__
+		// GeneralsX @bugfix tarek 07/07/2026 On Android, GetAdapterDisplayMode may return
+		// D3DFMT_UNKNOWN because there's no traditional desktop. Default to X8R8G8B8 (32-bit).
+		if (desktop_mode.Format == D3DFMT_UNKNOWN) {
+			desktop_mode.Format = D3DFMT_X8R8G8B8;
+			LOG_ERROR("GetAdapterDisplayMode returned D3DFMT_UNKNOWN, defaulting to D3DFMT_X8R8G8B8");
+		}
+		#endif
 
 		DisplayFormat=_PresentParameters.BackBufferFormat = desktop_mode.Format;
 
@@ -1386,7 +1428,9 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 			}
 		}
 
-	} else {
+	}
+	#ifdef _WIN32
+	else {
 
 		/*
 		** Try to find a mode that matches the user's desired bit-depth.
@@ -1394,6 +1438,7 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 		Find_Color_And_Z_Mode(ResolutionWidth,ResolutionHeight,BitDepth,&DisplayFormat,
 			&_PresentParameters.BackBufferFormat,&_PresentParameters.AutoDepthStencilFormat);
 	}
+	#endif
 
 	/*
 	** Set default for depth stencil format if auto Z buffer failed.

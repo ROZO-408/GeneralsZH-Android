@@ -82,10 +82,18 @@ static Int s_disallowSpeechSetFrame = 0;
 // 30 logic frames/sec; 15s comfortably exceeds the longest taunt/EVA line.
 static const Int DISALLOW_SPEECH_MAX_FRAMES = 30 * 15;
 
+// GeneralsX @feature android-port 06/07/2026 FFmpeg is not yet available on
+// Android (vcpkg ffmpeg:arm64-android is broken). Stub the includes so the
+// engine compiles; audio decoding (speech/EVA) is disabled until ffmpeg is
+// hand-built for Android. Visuals + touch work without it.
+#if defined(__ANDROID__)
+#include "VideoDevice/FFmpeg/FFmpegAndroidStub.h"
+#else
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 }
+#endif
 
 #ifdef _INTERNAL
 //#pragma optimize("", off)

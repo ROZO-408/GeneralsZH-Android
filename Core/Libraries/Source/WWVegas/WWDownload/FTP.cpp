@@ -30,7 +30,10 @@
 // Platform headers with socket_compat.h providing Winsock → POSIX mapping
 #include <stdio.h>
 #include <sys/types.h>
+// GeneralsX @feature android-port 06/07/2026 Android bionic removed sys/timeb.h.
+#if !defined(__ANDROID__)
 #include <sys/timeb.h>
+#endif
 #include <stdlib.h>
 #ifdef _WIN32
 #include <process.h>

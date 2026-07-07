@@ -1,8 +1,13 @@
 #include "OpenALAudioCache.h"
 
+// GeneralsX @feature android-port 06/07/2026 FFmpeg stub for Android.
+#if defined(__ANDROID__)
+#include "VideoDevice/FFmpeg/FFmpegAndroidStub.h"
+#else
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
+#endif
 
 #include "Common/AudioEventInfo.h"
 #include "Common/AudioEventRTS.h"

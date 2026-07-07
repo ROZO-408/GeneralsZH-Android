@@ -31,12 +31,28 @@
 // SYSTEM INCLUDES
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#if defined(__ANDROID__)
+#include <android/log.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
+#endif
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-// On iOS, SDL renames main() to SDL_main and provides its own UIApplicationMain
-// bootstrap; the app lifecycle (suspend/resume, window) is owned by SDL.
+// GeneralsX @feature android-port 06/07/2026
+// Touch input, app-lifecycle render-gating, high-DPI drawables, and the
+// SDL_main bootstrap are shared across mobile targets: iOS (UIKit via SDL's
+// UIApplicationMain bridge) and Android (SDLActivity JNI -> SDL_main). Gate
+// the platform-agnostic mobile code on SAGE_MOBILE instead of repeating
+// __ANDROID__ in every iOS guard. iOS-only mechanisms (MoltenVK, funopen,
+// bundle-relative paths) stay on the narrower TARGET_OS_IPHONE guard below.
+#if (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || defined(__ANDROID__)
+#define SAGE_MOBILE 1
+#endif
+#ifdef SAGE_MOBILE
+// On iOS/Android, SDL renames main() to SDL_main and provides the platform
+// bootstrap (iOS: UIApplicationMain; Android: SDLActivity JNI nativeRunMain).
+// The app lifecycle (suspend/resume, window) is owned by SDL.
 #include <SDL3/SDL_main.h>
 #include <cerrno>
 #include <sys/stat.h>
@@ -120,6 +136,12 @@ extern Int GameMain();
  */
 static void FilterSoftwareVulkanICDs()
 {
+#if defined(__ANDROID__)
+	// GeneralsX @feature android-port 06/07/2026 Android has no /usr/share/vulkan
+	// ICD directory and no software Vulkan ICDs to filter; the system driver is
+	// always hardware. Also, bionic's glob() requires API 28+ (we target 24).
+	return;
+#else
 	if (getenv("VK_DRIVER_FILES") || getenv("VK_ICD_FILENAMES")) {
 		return;
 	}
@@ -171,6 +193,7 @@ static void FilterSoftwareVulkanICDs()
 		fprintf(stderr, "WARNING: Vulkan ICD filter: no hardware ICDs found, LLVMpipe exclusion skipped\n");
 		fprintf(stderr, "WARNING: If startup crashes in libvulkan_lvp.so, set VK_DRIVER_FILES manually\n");
 	}
+#endif // __ANDROID__
 }
 
 /**
@@ -249,12 +272,190 @@ int main(int argc, char* argv[])
 {
 	int exitcode = 1;
 
+#if defined(__ANDROID__)
+	__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "=== SDL_main entered ===");
+#endif
+
 	// TheSuperHackers @build felipebraz 13/02/2026
 	// Store command line arguments in globals for CommandLine.cpp parser
 	__argc = argc;
 	__argv = argv;
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#if defined(__ANDROID__)
+	// GeneralsX @feature android-port 06/07/2026 Android working directory + diagnostics.
+	//
+	// Android does not expose APK assets via the filesystem: a native fopen() on
+	// "GameData/*.big" cannot reach them. The packaging step stages GameData into
+	// the app's internal storage (<files>/GameData), which IS a real filesystem
+	// path the engine can chdir() into and read with stdio — mirroring the iOS
+	// "GameData beside the binary" model. SDL3 surfaces that path via
+	// SDL_GetAndroidInternalStoragePath(). User data (saves, replays, logs) goes
+	// under the same root; DXVK's shader cache lives under the cache dir.
+	//
+	// Diagnostics: native stderr/stdout already flow to `adb logcat`, but a
+	// memory-killed process leaves no tombstone, so we ALSO keep a capped,
+	// filtered file log (the iOS port's hard-won lesson). bionic has no funopen(),
+	// so a simple ring-buffered write() sink replaces it.
+	setenv("DXVK_LOG_LEVEL", "none", 0);
+	// The engine's StdBIGFileSystem::init() reads "InstallPath" from the registry
+	// to locate the Data/*.big archives. On Android there's no registry — the
+	// env-var fallback (CNC_ZH_INSTALLPATH) provides it. Point it at "." so the
+	// engine finds Data/ relative to the CWD (set below).
+	setenv("CNC_ZH_INSTALLPATH", ".", 0);
+	setenv("CNC_GENERALS_INSTALLPATH", ".", 0);
+	{
+		// GeneralsX @feature android-port 06/07/2026
+		// Try EXTERNAL storage first (adb-pushable, no root): the app's external
+		// files dir at /sdcard/Android/data/<pkg>/files/GameData. Fall back to
+		// internal storage (set by the packaging script).
+		const char *extFiles = SDL_GetAndroidExternalStoragePath();
+		const char *files = SDL_GetAndroidInternalStoragePath();
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX",
+			"storage: external=%s internal=%s",
+			extFiles ? extFiles : "(null)", files ? files : "(null)");
+
+		bool chdirOk = false;
+		if (extFiles != nullptr) {
+			char gameData[1024];
+			snprintf(gameData, sizeof(gameData), "%s/GameData", extFiles);
+			if (access(gameData, R_OK) == 0 && chdir(gameData) == 0) {
+				__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "CWD -> %s (external)", gameData);
+				chdirOk = true;
+			}
+			SDL_free((void*)extFiles);
+		}
+		if (!chdirOk && files != nullptr) {
+			char gameData[1024];
+			snprintf(gameData, sizeof(gameData), "%s/GameData", files);
+			if (access(gameData, R_OK) == 0 && chdir(gameData) == 0) {
+				__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "CWD -> %s (internal)", gameData);
+				chdirOk = true;
+			}
+		}
+		if (!chdirOk) {
+			__android_log_print(ANDROID_LOG_WARN, "GeneralsX", "no GameData dir found, CWD unchanged");
+		}
+
+		// GeneralsX @feature android-port 07/07/2026 Extract bundled fonts from
+		// APK assets to the GameData filesystem. Android APK assets are invisible
+		// to fopen()/access(), but the engine's FreeType font locator
+		// (Locate_Font_FontConfig) probes <CWD>/fonts/<name>.ttf via access().
+		// The packaging step bundles Liberation fonts (renamed to Windows names)
+		// into assets/fonts/. Extract them once on first launch so the engine can
+		// read them via standard stdio.
+		{
+			char fontsDir[1024];
+			const char *extractBase = nullptr;
+			const char *extFiles2 = SDL_GetAndroidExternalStoragePath();
+			if (extFiles2 != nullptr) {
+				snprintf(fontsDir, sizeof(fontsDir), "%s/GameData/fonts", extFiles2);
+				extractBase = fontsDir;
+				SDL_free((void*)extFiles2);
+			}
+			if (extractBase == nullptr) {
+				const char *intFiles2 = SDL_GetAndroidInternalStoragePath();
+				if (intFiles2 != nullptr) {
+					snprintf(fontsDir, sizeof(fontsDir), "%s/GameData/fonts", intFiles2);
+					extractBase = fontsDir;
+					SDL_free((void*)intFiles2);
+				}
+			}
+
+			if (extractBase != nullptr) {
+				mkdir(extractBase, 0755);
+
+				// Check if fonts already extracted (skip if arial.ttf exists)
+				char checkPath[1100];
+				snprintf(checkPath, sizeof(checkPath), "%s/arial.ttf", extractBase);
+				if (access(checkPath, R_OK) != 0) {
+					// Obtain the AAssetManager via JNI (SDL3 doesn't expose it directly)
+					AAssetManager *mgr = nullptr;
+					JNIEnv *env = (JNIEnv *)SDL_GetAndroidJNIEnv();
+					jobject activity = (jobject)SDL_GetAndroidActivity();
+					if (env != nullptr && activity != nullptr) {
+						jclass cls = env->GetObjectClass(activity);
+						jmethodID mid = env->GetMethodID(cls, "getAssets", "()Landroid/content/res/AssetManager;");
+						if (mid != nullptr) {
+							jobject javaAssetMgr = env->CallObjectMethod(activity, mid);
+							if (javaAssetMgr != nullptr) {
+								mgr = AAssetManager_fromJava(env, javaAssetMgr);
+								env->DeleteLocalRef(javaAssetMgr);
+							}
+						}
+						env->DeleteLocalRef(cls);
+					}
+
+					if (mgr != nullptr) {
+						static const char * const fontFiles[] = {
+							"arial.ttf", "arialbold.ttf",
+							"couriernew.ttf", "timesnewroman.ttf"
+						};
+						__android_log_print(ANDROID_LOG_INFO, "GeneralsX",
+							"fonts: extracting from APK assets to %s", extractBase);
+						for (int i = 0; i < (int)(sizeof(fontFiles)/sizeof(fontFiles[0])); ++i) {
+							char assetPath[256];
+							snprintf(assetPath, sizeof(assetPath), "fonts/%s", fontFiles[i]);
+							AAsset *asset = AAssetManager_open(mgr, assetPath, AASSET_MODE_STREAMING);
+							if (asset == nullptr) {
+								__android_log_print(ANDROID_LOG_WARN, "GeneralsX",
+									"fonts: asset '%s' not found in APK", assetPath);
+								continue;
+							}
+							char outPath[1100];
+							snprintf(outPath, sizeof(outPath), "%s/%s", extractBase, fontFiles[i]);
+							int outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+							if (outFd < 0) {
+								AAsset_close(asset);
+								continue;
+							}
+							char buf[8192];
+							int bytesRead;
+							while ((bytesRead = AAsset_read(asset, buf, sizeof(buf))) > 0) {
+								write(outFd, buf, bytesRead);
+							}
+							close(outFd);
+							AAsset_close(asset);
+							__android_log_print(ANDROID_LOG_INFO, "GeneralsX",
+								"fonts: extracted %s", fontFiles[i]);
+						}
+					} else {
+						__android_log_print(ANDROID_LOG_WARN, "GeneralsX",
+							"fonts: cannot get AAssetManager via JNI");
+					}
+				} else {
+					__android_log_print(ANDROID_LOG_INFO, "GeneralsX",
+						"fonts: already present at %s", extractBase);
+				}
+			}
+		}
+
+			if (files != nullptr) {
+			// DXVK shader cache in the app cache dir (purgeable under storage pressure).
+			const char *cache = SDL_GetAndroidCachePath();
+			if (cache != nullptr) {
+				setenv("DXVK_STATE_CACHE_PATH", cache, 0);
+				SDL_free((void*)cache);
+			}
+			// Capped, filtered stderr file sink (post-mortem evidence after a kill).
+			char logPath[1100], prevPath[1100];
+			snprintf(logPath, sizeof(logPath), "%s/generals-stderr.log", files);
+			snprintf(prevPath, sizeof(prevPath), "%s/generals-stderr-prev.log", files);
+			rename(logPath, prevPath);
+			static int s_logFd = open(logPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (s_logFd >= 0) {
+				// Redirect the C stderr FILE onto our fd via dup2: portable across
+				// bionic/libc, unlike Darwin's funopen(). Line-buffered so a crash
+				// still flushes recent lines. (Per-frame spam filtering is left to
+				// dxvk.conf + DXVK_LOG_LEVEL=none; a full filter callback would need
+				// a custom FILE backend that bionic does not provide.)
+				fflush(stderr);
+				dup2(s_logFd, STDERR_FILENO);
+				setvbuf(stderr, nullptr, _IOLBF, 0);
+			}
+			SDL_free((void*)files);
+		}
+	}
+#elif defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 	// Diagnostic capture: an icon-launched app's stderr goes nowhere we can read,
 	// so mirror it to a file in Library/Caches (purgeable, not user-visible). This
 	// lets us pull a full engine log after an on-device session — essential for
@@ -440,20 +641,32 @@ int main(int argc, char* argv[])
 		TheDmaCriticalSection = &critSec3;
 		TheMemoryPoolCriticalSection = &critSec4;
 		TheDebugLogCriticalSection = &critSec5;
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "init: critical sections OK");
+#endif
 
 		// Initialize memory manager early (required by NEW operator)
 		initMemoryManager();
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "init: memory manager OK");
+#endif
 
 		// GeneralsX @bugfix BenderAI 14/02/2026 Initialize Version singleton
 		// GameEngine::init() calls updateWindowTitle() which uses TheVersion
 		// Must be created before GameMain() to avoid nullptr dereference
 		TheVersion = NEW Version;
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "init: Version OK");
+#endif
 
 		// Parse command line (CommandLine class handles argc/argv internally)
 		// TheSuperHackers @build felipebraz 10/02/2026 Phase 1.5
 		// Store argc/argv for CommandLine parser to access via _NSGetArgc/_NSGetArgv or /proc/self/cmdline
 		// For now, let CommandLine::parseCommandLineForStartup() handle this
 		CommandLine::parseCommandLineForStartup();
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "init: CommandLine OK (TheGlobalData=%p)", (void*)TheGlobalData);
+#endif
 
 		// GeneralsX @bugfix Copilot 17/05/2026 Skip SDL3 window bootstrap for CLI/headless replay execution.
 		const bool isHeadlessMode = (TheGlobalData != nullptr && TheGlobalData->m_headless);
@@ -466,7 +679,7 @@ int main(int argc, char* argv[])
 		// This prevents LLVM SIGSEGV crash during Vulkan driver enumeration
 		// Must be done here, not in SDL3GameEngine::init() which is too late
 		fprintf(stderr, "INFO: Initializing SDL3 video subsystem...\n");
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 		// All mouse events are synthesized by the gesture translator in
 		// SDL3GameEngine.cpp; SDL's automatic touch->mouse synthesis would
 		// double-deliver finger 1 and fight the two-finger pan logic.
@@ -496,8 +709,8 @@ int main(int argc, char* argv[])
 		// Create SDL3 window with Vulkan support
 		fprintf(stderr, "INFO: Creating SDL3 Vulkan window...\n");
 		Uint32 windowFlags = SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;  // Start hidden, show after D3D init
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-		// Request a native-resolution Metal drawable (e.g. 2868x1320 instead of the
+#ifdef SAGE_MOBILE
+		// Request a native-resolution drawable (e.g. 2868x1320 instead of the
 		// 956x440 point size). Without this the swapchain renders at point size and
 		// the display upscales 3x, visibly blurring textures and terrain.
 		windowFlags |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
@@ -518,15 +731,16 @@ int main(int argc, char* argv[])
 		ApplicationHWnd = (HWND)TheSDL3Window;
 		fprintf(stderr, "INFO: SDL3 window created successfully\n");
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-		// Match the game's internal resolution to the phone screen's aspect ratio.
-		// Without this the engine runs its 4:3 default inside the 19.5:9 display:
-		// pillarboxed picture and a skewed window->game coordinate mapping. Height
-		// stays at the engine's 600px design baseline (UI layouts assume >= 600);
-		// width follows the real aspect. Injected as -xres/-yres argv entries so
-		// the normal command-line path applies them (user-passed flags still win
-		// because the parser lets later arguments override earlier ones... ours go
-		// last, so only add them if the user didn't pass explicit -xres/-yres).
+#ifdef SAGE_MOBILE
+		// Match the game's internal resolution to the screen's aspect ratio.
+		// Without this the engine runs its 4:3 default inside a wide mobile display
+		// (e.g. 19.5:9 phone, 16:10 tablet): pillarboxed picture and a skewed
+		// window->game coordinate mapping. Height stays at the engine's 600px
+		// design baseline (UI layouts assume >= 600); width follows the real
+		// aspect. Injected as -xres/-yres argv entries so the normal command-line
+		// path applies them (user-passed flags still win because the parser lets
+		// later arguments override earlier ones... ours go last, so only add them
+		// if the user didn't pass explicit -xres/-yres).
 		{
 			bool userSetRes = false;
 			for (int i = 1; i < __argc; ++i) {
@@ -562,7 +776,7 @@ int main(int argc, char* argv[])
 				newArgv[n] = nullptr;
 				__argv = newArgv;
 				__argc = n;
-				fprintf(stderr, "INFO: iOS internal resolution set to %sx%s (window %dx%d)\n",
+				fprintf(stderr, "INFO: Mobile internal resolution set to %sx%s (window %dx%d)\n",
 				        xresVal, yresVal, winW, winH);
 			}
 		}
@@ -570,15 +784,24 @@ int main(int argc, char* argv[])
 		}
 
 		// Call cross-platform game entry point
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_INFO, "GeneralsX", "calling GameMain()...");
+#endif
 		exitcode = GameMain();
 
 		fprintf(stderr, "INFO: GameMain() returned with code %d\n", exitcode);
 
 	} catch (const std::exception& e) {
 		fprintf(stderr, "FATAL: Unhandled exception in main(): %s\n", e.what());
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_FATAL, "GeneralsX", "Unhandled exception: %s", e.what());
+#endif
 		exitcode = 1;
 	} catch (...) {
 		fprintf(stderr, "FATAL: Unknown exception in main()\n");
+#if defined(__ANDROID__)
+		__android_log_print(ANDROID_LOG_FATAL, "GeneralsX", "Unknown exception in main()");
+#endif
 		exitcode = 1;
 	}
 

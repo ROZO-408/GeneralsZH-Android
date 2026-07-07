@@ -32,18 +32,28 @@
 #include "Common/GameEngine.h"
 #include "Common/ReplaySimulation.h"
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#define GX_LOG(...) __android_log_print(ANDROID_LOG_INFO, "GeneralsX", __VA_ARGS__)
+#else
+#define GX_LOG(...) (void)0
+#endif
+
 
 /**
  * This is the entry point for the game system.
  */
 Int GameMain()
 {
+	GX_LOG("GameMain: creating engine...");
 	int exitcode = 0;
 	// initialize the game engine using factory function
 	TheFramePacer = new FramePacer();
 	TheFramePacer->enableFramesPerSecondLimit(TRUE);
 	TheGameEngine = CreateGameEngine();
+	GX_LOG("GameMain: engine=%p, calling init()...", (void*)TheGameEngine);
 	TheGameEngine->init();
+	GX_LOG("GameMain: init() done, calling execute()...");
 
 	if (!TheGlobalData->m_simulateReplays.empty())
 	{

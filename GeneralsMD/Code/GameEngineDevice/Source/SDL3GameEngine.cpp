@@ -57,35 +57,47 @@
 #include <TargetConditionals.h>
 #endif
 
+// GeneralsX @feature android-port 06/07/2026
+// Touch input, app-lifecycle render-gating, and the gesture state machine are
+// shared by every mobile target. SAGE_MOBILE covers iOS and Android; the iOS
+// branch names (iosShouldPauseRendering, iosLifecycleWatcher) are kept for
+// history but now compile for Android too — Android destroys the drawing
+// surface (ANativeWindow) on background, so halting render+sim is even more
+// mandatory there than on iOS.
+#if (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || defined(__ANDROID__)
+#define SAGE_MOBILE 1
+#endif
+
 // Extern globals for input devices (set by GameClient)
 extern Mouse *TheMouse;
 extern Keyboard *TheKeyboard;
 extern GameWindowManager *TheWindowManager;
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 #include <atomic>
 
 // ---------------------------------------------------------------------------
-// iOS app lifecycle
+// Mobile app lifecycle
 //
-// iOS suspends the process when the app leaves the foreground. Any GPU work
-// submitted around suspension stalls on drawable acquisition (MoltenVK waits
-// out a timeout per present), which surfaces as multi-second input hangs right
-// after resuming. SDL warns that lifecycle events can arrive outside the
-// normal poll cycle, so they are captured in an event watcher that fires
-// immediately on the delivering thread; the engine update loop checks the
-// flag and skips simulation + rendering while backgrounded.
+// Mobile OSes suspend the process when the app leaves the foreground. Any GPU
+// work submitted around suspension is hazardous: on iOS it stalls on drawable
+// acquisition (MoltenVK waits out a timeout per present); on Android the
+// ANativeWindow backing the Vulkan surface is DESTROYED, so a present call
+// fails hard with VK_ERROR_SURFACE_LOST_KHR. SDL warns that lifecycle events
+// can arrive outside the normal poll cycle, so they are captured in an event
+// watcher that fires immediately on the delivering thread; the engine update
+// loop checks the flag and skips simulation + rendering while backgrounded.
 // ---------------------------------------------------------------------------
-// Two independent reasons to halt the render/sim loop on iOS:
+// Two independent reasons to halt the render/sim loop:
 //  - BACKGROUNDED (home / switched away): the process is about to be suspended.
-//  - INACTIVE (multitasking switcher open, Control Center, a notification
-//    banner): iOS snapshots the window and owns the CAMetalLayer drawable during
-//    this window — and crucially, opening the app switcher fires resign-active
-//    WITHOUT a full background transition.
-// Acquiring a Metal drawable during EITHER state fights iOS for the layer; across
-// repeated suspend/switcher cycles MoltenVK is driven into an unrecoverable
-// surface state and the app crashes (the reported "crashes after backgrounding /
-// multitasking a few times"). Pause whenever either is set.
+//  - INACTIVE (multitasking switcher open, Control Center / Recents, a
+//    notification banner): the OS snapshots the window and owns the drawing
+//    surface during this window — and crucially, opening the app switcher
+//    fires resign-active WITHOUT a full background transition.
+// Acquiring a drawable during EITHER state fights the OS for the surface; across
+// repeated suspend/switcher cycles the Vulkan/MoltenVK surface is driven into an
+// unrecoverable state and the app crashes (the reported "crashes after
+// backgrounding / multitasking a few times"). Pause whenever either is set.
 static std::atomic<bool> s_appBackgrounded{false};
 static std::atomic<bool> s_appInactive{false};
 
@@ -106,12 +118,15 @@ static bool SDLCALL iosLifecycleWatcher(void *userdata, SDL_Event *event)
 			break;
 		// Resign/become active. On iOS, SDL maps applicationWillResignActive ->
 		// window focus lost and applicationDidBecomeActive -> window focus gained.
-		// Stay paused until fully active again (focus regained), which arrives
-		// after DID_ENTER_FOREGROUND.
+		// On Android, SDL maps onPause->FOCUS_LOST/MINIMIZED and onResume->
+		// FOCUS_GAINED/RESTORED. Stay paused until fully active again (focus
+		// regained), which arrives after DID_ENTER_FOREGROUND.
 		case SDL_EVENT_WINDOW_FOCUS_LOST:
+		case SDL_EVENT_WINDOW_MINIMIZED:
 			s_appInactive.store(true);
 			break;
 		case SDL_EVENT_WINDOW_FOCUS_GAINED:
+		case SDL_EVENT_WINDOW_RESTORED:
 			s_appInactive.store(false);
 			break;
 		default:
@@ -121,11 +136,13 @@ static bool SDLCALL iosLifecycleWatcher(void *userdata, SDL_Event *event)
 }
 
 // ---------------------------------------------------------------------------
-// iOS touch -> mouse gesture translation
+// Mobile touch -> mouse gesture translation
 //
-// SDL's automatic touch-mouse synthesis is disabled on iOS (SDL3Main.cpp sets
-// SDL_HINT_TOUCH_MOUSE_EVENTS=0); every mouse event the game sees on iOS is
-// synthesized here, through the same SDL3Mouse::addSDLEvent path real mice use.
+// SDL's automatic touch-mouse synthesis is disabled on mobile (SDL3Main.cpp
+// sets SDL_HINT_TOUCH_MOUSE_EVENTS=0); every mouse event the game sees on a
+// touch device is synthesized here, through the same SDL3Mouse::addSDLEvent
+// path real mice use. The same SDL_EVENT_FINGER_* events fire on iOS (UIKit)
+// and Android (MotionEvent), so this state machine is shared verbatim.
 //
 // Gestures (matching the game's stock control scheme, which is LMB-centric):
 //   1 finger tap/drag     -> left button click / drag (select, command, drag-box)
@@ -367,7 +384,7 @@ void updateTouchLongPress(SDL3Mouse *mouse, SDL_Window *window)
 }
 
 } // anonymous namespace
-#endif // TARGET_OS_IPHONE
+#endif // SAGE_MOBILE
 
 namespace {
 
@@ -494,8 +511,8 @@ void SDL3GameEngine::init(void)
 	m_IsInitialized = true;
 	m_IsActive = true;
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-	// Lifecycle events can fire outside the poll cycle on iOS; catch them
+#ifdef SAGE_MOBILE
+	// Lifecycle events can fire outside the poll cycle on mobile; catch them
 	// immediately so rendering halts before the process is suspended.
 	SDL_AddEventWatch(iosLifecycleWatcher, nullptr);
 #endif
@@ -526,11 +543,13 @@ void SDL3GameEngine::reset(void)
 void SDL3GameEngine::update(void)
 {
 	pollSDL3Events();
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 	// Pause sim + render while backgrounded OR inactive (see iosLifecycleWatcher).
-	// Acquiring a Metal drawable in these windows fights iOS for the layer and,
-	// across repeated suspend/switcher cycles, crashes MoltenVK. Keep polling so
-	// we still catch the resume events; just don't touch the GPU.
+	// Acquiring a drawable in these windows fights the OS for the surface: on iOS
+	// it stalls on the Metal layer and, across repeated suspend/switcher cycles,
+	// crashes MoltenVK; on Android the ANativeWindow is destroyed and a present
+	// call fails hard. Keep polling so we still catch the resume events; just
+	// don't touch the GPU.
 	if (iosShouldPauseRendering()) {
 		SDL_Delay(50);
 		return;
@@ -617,7 +636,7 @@ void SDL3GameEngine::pollSDL3Events(void)
 				}
 				break;
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 			// App suspension/resume: mirror the desktop focus handling so audio
 			// and mouse state pause cleanly (the render gate lives in update()).
 			case SDL_EVENT_DID_ENTER_BACKGROUND:
@@ -668,7 +687,7 @@ void SDL3GameEngine::pollSDL3Events(void)
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
 			case SDL_EVENT_MOUSE_BUTTON_UP:
 			case SDL_EVENT_MOUSE_WHEEL:
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 				// Belt-and-braces: drop SDL's own touch-synthesized mouse events.
 				// The gesture translator owns all touch->mouse conversion; double
 				// delivery would produce phantom second clicks.
@@ -686,7 +705,7 @@ void SDL3GameEngine::pollSDL3Events(void)
 				}
 				break;
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 			case SDL_EVENT_FINGER_DOWN:
 			case SDL_EVENT_FINGER_MOTION:
 			case SDL_EVENT_FINGER_UP:
@@ -712,7 +731,7 @@ void SDL3GameEngine::pollSDL3Events(void)
 		updateTextInputState();
 	}
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef SAGE_MOBILE
 	// Poll the long-press timer every frame; a stationary finger emits no events.
 	if (TheMouse && m_SDLWindow) {
 		SDL3Mouse* touchMouse = dynamic_cast<SDL3Mouse*>(TheMouse);

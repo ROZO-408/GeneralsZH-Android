@@ -408,6 +408,7 @@ private:
 #ifdef MEMORYPOOL_BOUNDINGWALL
 	Int										m_wallPattern;			///< unique seed value for the bounding-walls for this block
 #endif
+	Int										m_dmaMagicCookie;		///< GEMS magic cookie to identify game-allocated blocks
 #ifdef MEMORYPOOL_DEBUG
 	const char						*m_debugLiteralTagString;	///< ptr to the tagstring for this block.
 	Int										m_logicalSize;						///< logical size of block (not including overhead, walls, etc.)
@@ -436,6 +437,7 @@ public:
 	void* getUserData();
 	static MemoryPoolSingleBlock *recoverBlockFromUserData(void* pUserData);
 	MemoryPoolBlob *getOwningBlob();
+	Int getDmaMagicCookie() const { return m_dmaMagicCookie; }
 
 	MemoryPoolSingleBlock *getNextFreeBlock();
 	void setNextFreeBlock(MemoryPoolSingleBlock *b);
@@ -901,6 +903,7 @@ void MemoryPoolSingleBlock::initBlock(Int logicalSize, MemoryPoolBlob *owningBlo
 	m_prevBlock = nullptr;
 #endif
 	m_owningBlob = owningBlob;	// could be null
+	m_dmaMagicCookie = 0x47454d53;
 
 #ifdef MEMORYPOOL_BOUNDINGWALL
 	m_wallPattern = theBoundingWallPattern++;
@@ -3304,8 +3307,23 @@ void operator delete(void *p)
 {
 	++theLinkTester;
 	preMainInitMemoryManager();
-	DEBUG_ASSERTCRASH(TheDynamicMemoryAllocator != nullptr, ("must init memory manager before calling global operator delete"));
-	TheDynamicMemoryAllocator->freeBytes(p);
+	if (p)
+	{
+		static constexpr size_t kHeaderSize = (sizeof(MemoryPoolSingleBlock) + 15) & ~size_t(15);
+		char* headerPtr = ((char*)p) - kHeaderSize;
+		#ifdef MEMORYPOOL_BOUNDINGWALL
+		headerPtr -= WALLSIZE;
+		#endif
+		MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)headerPtr;
+		if (TheDynamicMemoryAllocator && block->getDmaMagicCookie() == 0x47454d53)
+		{
+			TheDynamicMemoryAllocator->freeBytes(p);
+		}
+		else
+		{
+			::free(p);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3316,8 +3334,23 @@ void operator delete[](void *p)
 {
 	++theLinkTester;
 	preMainInitMemoryManager();
-	DEBUG_ASSERTCRASH(TheDynamicMemoryAllocator != nullptr, ("must init memory manager before calling global operator delete"));
-	TheDynamicMemoryAllocator->freeBytes(p);
+	if (p)
+	{
+		static constexpr size_t kHeaderSize = (sizeof(MemoryPoolSingleBlock) + 15) & ~size_t(15);
+		char* headerPtr = ((char*)p) - kHeaderSize;
+		#ifdef MEMORYPOOL_BOUNDINGWALL
+		headerPtr -= WALLSIZE;
+		#endif
+		MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)headerPtr;
+		if (TheDynamicMemoryAllocator && block->getDmaMagicCookie() == 0x47454d53)
+		{
+			TheDynamicMemoryAllocator->freeBytes(p);
+		}
+		else
+		{
+			::free(p);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3344,8 +3377,23 @@ void operator delete(void * p, const char *, int)
 {
 	++theLinkTester;
 	preMainInitMemoryManager();
-	DEBUG_ASSERTCRASH(TheDynamicMemoryAllocator != nullptr, ("must init memory manager before calling global operator delete"));
-	TheDynamicMemoryAllocator->freeBytes(p);
+	if (p)
+	{
+		static constexpr size_t kHeaderSize = (sizeof(MemoryPoolSingleBlock) + 15) & ~size_t(15);
+		char* headerPtr = ((char*)p) - kHeaderSize;
+		#ifdef MEMORYPOOL_BOUNDINGWALL
+		headerPtr -= WALLSIZE;
+		#endif
+		MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)headerPtr;
+		if (TheDynamicMemoryAllocator && block->getDmaMagicCookie() == 0x47454d53)
+		{
+			TheDynamicMemoryAllocator->freeBytes(p);
+		}
+		else
+		{
+			::free(p);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3372,8 +3420,23 @@ void operator delete[](void * p, const char *, int)
 {
 	++theLinkTester;
 	preMainInitMemoryManager();
-	DEBUG_ASSERTCRASH(TheDynamicMemoryAllocator != nullptr, ("must init memory manager before calling global operator delete"));
-	TheDynamicMemoryAllocator->freeBytes(p);
+	if (p)
+	{
+		static constexpr size_t kHeaderSize = (sizeof(MemoryPoolSingleBlock) + 15) & ~size_t(15);
+		char* headerPtr = ((char*)p) - kHeaderSize;
+		#ifdef MEMORYPOOL_BOUNDINGWALL
+		headerPtr -= WALLSIZE;
+		#endif
+		MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)headerPtr;
+		if (TheDynamicMemoryAllocator && block->getDmaMagicCookie() == 0x47454d53)
+		{
+			TheDynamicMemoryAllocator->freeBytes(p);
+		}
+		else
+		{
+			::free(p);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------

@@ -46,6 +46,7 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"
+#include <vector>
 #include "Common/ArchiveFile.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/AsciiString.h"
@@ -154,19 +155,32 @@ void ArchiveFileSystem::loadIntoDirectoryTree(ArchiveFile *archiveFile, Bool ove
 			infoInPath = tokenizer.nextToken(&token, "\\/");
 		}
 
-		ArchivedFileLocationMap::iterator fileIt;
 		if (overwrite)
 		{
-			// When overwriting, try place the new value at the beginning of the key list.
-			fileIt = dirInfo->m_files.find(token);
+			// When overwriting, we want the new archiveFile to be the first matching element
+			// for the given token in the multimap. Since std::multimap::insert inserts
+			// equivalent keys at the end of the range, we can erase the existing entries,
+			// insert the new one, and then re-insert the erased entries, so they follow the new one.
+			std::vector<ArchiveFile*> existing;
+			std::pair<ArchivedFileLocationMap::iterator, ArchivedFileLocationMap::iterator> overwriteRange = dirInfo->m_files.equal_range(token);
+			for (ArchivedFileLocationMap::iterator mapIt = overwriteRange.first; mapIt != overwriteRange.second; ++mapIt)
+			{
+				existing.push_back(mapIt->second);
+			}
+			if (!existing.empty())
+			{
+				dirInfo->m_files.erase(overwriteRange.first, overwriteRange.second);
+			}
+			dirInfo->m_files.insert(std::make_pair(token, archiveFile));
+			for (ArchiveFile* oldArchive : existing)
+			{
+				dirInfo->m_files.insert(std::make_pair(token, oldArchive));
+			}
 		}
 		else
 		{
-			// Append to the end of the key list.
-			fileIt = dirInfo->m_files.end();
+			dirInfo->m_files.insert(dirInfo->m_files.end(), std::make_pair(token, archiveFile));
 		}
-
-		dirInfo->m_files.insert(fileIt, std::make_pair(token, archiveFile));
 
 #if defined(DEBUG_LOGGING) && ENABLE_FILESYSTEM_LOGGING
 		{

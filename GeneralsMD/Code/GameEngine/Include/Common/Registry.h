@@ -33,16 +33,16 @@
 /**
  * Get a string from the original Generals Registry
  */
-Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiString& val);
+Bool GetStringFromGeneralsRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val);
 /**
 	* Get a string from the registry
 	*/
-Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val);
+Bool GetStringFromRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val);
 
 /**
 	* Get an unsigned int from the registry
 	*/
-Bool GetUnsignedIntFromRegistry(AsciiString path, AsciiString key, UnsignedInt& val);
+Bool GetUnsignedIntFromRegistry(const AsciiString& path, const AsciiString& key, UnsignedInt& val);
 
 AsciiString GetRegistryLanguage(); // convenience function
 AsciiString GetRegistryGameName(); // convenience function

@@ -59,7 +59,21 @@
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/Weapon.h"
 
-#if __cplusplus >= 201611L && !defined(__APPLE__)
+// GeneralsX @feature android-port 06/07/2026 Android crash archaeology: the
+// engine's generic catch(...) in INI::load() wraps every block-parse failure
+// into a uniform "Error parsing INI file" message, hiding the real exception.
+// Emit the actual std::exception::what() to logcat so we can see the true
+// root cause (e.g. std::bad_alloc, std::out_of_range, debug-assert, ...).
+#if defined(__ANDROID__)
+#include <android/log.h>
+#include <typeinfo>
+#define GX_INI_LOG(...) __android_log_print(ANDROID_LOG_ERROR, "GeneralsX", __VA_ARGS__)
+#endif
+
+// GeneralsX @feature android-port 06/07/2026 Android NDK r27 libc++ lacks the
+// floating-point std::from_chars overload (only integral is implemented), so
+// disable it on Android and use the strtod fallback path.
+#if __cplusplus >= 201611L && !defined(__APPLE__) && !defined(__ANDROID__)
 #define USE_STD_FROM_CHARS_PARSING 1
 #else
 #define USE_STD_FROM_CHARS_PARSING 0
@@ -441,7 +455,31 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 					try {
 						(*parse)( this );
 
+					}
+#if defined(__ANDROID__)
+					// GeneralsX @feature android-port 06/07/2026 Log the *actual*
+					// exception type + what() before wrapping it, so logcat shows
+					// the true root cause instead of the generic message.
+					catch (const std::exception& ex) {
+						GX_INI_LOG("INI BLOCK FAILED: block='%s' file='%s' line='%s' excType='%s' what='%s'",
+							token, m_filename.str(), currentLine.str(),
+							typeid(ex).name(), ex.what());
+						DEBUG_CRASH(("Error parsing block '%s' in INI file '%s'", token, m_filename.str()) );
+						char buff[1024];
+						snprintf(buff, ARRAY_SIZE(buff), "Error parsing INI file '%s' (Line: '%s') [%s: %s]\n",
+							m_filename.str(), currentLine.str(), typeid(ex).name(), ex.what());
+						throw INIException(buff);
 					} catch (...) {
+						GX_INI_LOG("INI BLOCK FAILED (non-std): block='%s' file='%s' line='%s'",
+							token, m_filename.str(), currentLine.str());
+						DEBUG_CRASH(("Error parsing block '%s' in INI file '%s'", token, m_filename.str()) );
+						char buff[1024];
+						snprintf(buff, ARRAY_SIZE(buff), "Error parsing INI file '%s' (Line: '%s')\n",
+							m_filename.str(), currentLine.str());
+						throw INIException(buff);
+					}
+#else
+					catch (...) {
 						DEBUG_CRASH(("Error parsing block '%s' in INI file '%s'", token, m_filename.str()) );
 						char buff[1024];
 						snprintf(buff, ARRAY_SIZE(buff), "Error parsing INI file '%s' (Line: '%s')\n",
@@ -449,6 +487,7 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 
 						throw INIException(buff);
 					}
+#endif
 					#ifdef DEBUG_CRASHING
 						strcpy(m_curBlockStart, "NO_BLOCK");
 					#endif
@@ -1585,7 +1624,36 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 
 						(*parse)( this, what, (char *)what + offset + parseTableList.getNthExtraOffset(ptIdx), userData );
 
+						}
+#if defined(__ANDROID__)
+						// GeneralsX @feature android-port 06/07/2026 Log the field
+						// name + current line context when a field parse throws, so
+						// we can see which INI field value is rejected (e.g. an
+						// enum token not in a name list, a missing token, etc.).
+						catch (const std::exception& ex) {
+							GX_INI_LOG("INI FIELD FAILED: file='%s' line=%d field='%s' excType='%s' what='%s'",
+								m_filename.str(), getLineNum(), field,
+								typeid(ex).name(), ex.what());
+							DEBUG_CRASH( ("[LINE: %d - FILE: '%s'] Error reading field '%s' of block '%s'",
+																 INI::getLineNum(), INI::getFilename().str(), field, m_curBlockStart) );
+							char buff[1024];
+							snprintf(buff, ARRAY_SIZE(buff), "[LINE: %d - FILE: '%s'] Error reading field '%s' [%s: %s]\n",
+								INI::getLineNum(), INI::getFilename().str(), field, typeid(ex).name(), ex.what());
+							throw INIException(buff);
 						} catch (...) {
+							GX_INI_LOG("INI FIELD FAILED (non-std): file='%s' line=%d field='%s'",
+								m_filename.str(), getLineNum(), field);
+							// Dump the current line contents to see the offending value
+							GX_INI_LOG("  current line: '%s'", m_buffer);
+							DEBUG_CRASH( ("[LINE: %d - FILE: '%s'] Error reading field '%s' of block '%s'",
+																 INI::getLineNum(), INI::getFilename().str(), field, m_curBlockStart) );
+							char buff[1024];
+							snprintf(buff, ARRAY_SIZE(buff), "[LINE: %d - FILE: '%s'] Error reading field '%s'\n",
+								INI::getLineNum(), INI::getFilename().str(), field);
+							throw INIException(buff);
+						}
+#else
+						catch (...) {
 							DEBUG_CRASH( ("[LINE: %d - FILE: '%s'] Error reading field '%s' of block '%s'",
 																 INI::getLineNum(), INI::getFilename().str(), field, m_curBlockStart) );
 
@@ -1595,6 +1663,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 								INI::getLineNum(), INI::getFilename().str(), field);
 							throw INIException(buff);
 						}
+#endif
 
 						found = true;
 						break;
@@ -1789,6 +1858,10 @@ Type scanType(std::string_view token)
 	}
 
 	DEBUG_CRASH(("token %s is not a valid member of the index list",token));
+#if defined(__ANDROID__)
+	// GeneralsX @feature android-port 06/07/2026 Log unmatched INI enum token.
+	GX_INI_LOG("scanIndexList: token '%s' NOT FOUND in index list", token);
+#endif
 	throw INI_INVALID_DATA;
 	return 0;	// never executed, but keeps compiler happy
 

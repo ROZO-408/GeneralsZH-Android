@@ -238,9 +238,9 @@ add_library(corei_ww3d2 INTERFACE)
 
 target_sources(corei_ww3d2 INTERFACE ${WW3D2_SRC})
 
-# GeneralsX @build fbraz 11/02/2026 BenderAI - Enable FreeType text rendering on Linux/macOS/iOS
+# GeneralsX @build fbraz 11/02/2026 BenderAI - Enable FreeType text rendering on Linux/macOS/iOS/Android
 target_compile_definitions(corei_ww3d2 INTERFACE
-    $<$<PLATFORM_ID:Linux,Darwin,iOS>:SAGE_USE_FREETYPE>
+    $<$<PLATFORM_ID:Linux,Darwin,iOS,Android>:SAGE_USE_FREETYPE>
 )
 
 if (MSVC AND NOT IS_VS6_BUILD)
@@ -250,9 +250,11 @@ if (MSVC AND NOT IS_VS6_BUILD)
 endif()
 
 # GeneralsX @build fbraz 11/02/2026 BenderAI - FreeType2 for Unix text rendering (Linux + macOS Phase 5)
-if(UNIX)
+# GeneralsX @feature android-port 06/07/2026 Android uses Freetype (FetchContent) but NOT fontconfig
+# (no fontconfig on Android; fonts resolve from a bundled fonts/ dir like iOS).
+if(UNIX AND NOT ANDROID)
     find_package(Freetype REQUIRED)
-    # iOS resolves fonts from a bundled fonts/ dir (render2dsentence.cpp); fontconfig is Linux/macOS only
+    # iOS + Android resolve fonts from a bundled fonts/ dir (render2dsentence.cpp); fontconfig is Linux/macOS only
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # GeneralsX @build felipebraz 20/06/2025 fontconfig needed on macOS too (render2dsentence.cpp uses Locate_Font_FontConfig)
         find_package(Fontconfig REQUIRED)
@@ -260,13 +262,14 @@ if(UNIX)
         find_package(Iconv REQUIRED)
     endif()
 endif()
+# Android: Freetype::Freetype target is created by cmake/freetype.cmake (FetchContent).
 
 target_link_libraries(corei_ww3d2 INTERFACE
     core_browserengine
     core_wwlib
     core_wwmath
     $<$<PLATFORM_ID:Linux>:Freetype::Freetype>
-    $<$<PLATFORM_ID:Darwin,iOS>:Freetype::Freetype>
+    $<$<PLATFORM_ID:Darwin,iOS,Android>:Freetype::Freetype>
     $<$<PLATFORM_ID:Linux>:Fontconfig::Fontconfig>
     $<$<PLATFORM_ID:Darwin>:Fontconfig::Fontconfig>
     $<$<PLATFORM_ID:Darwin>:Iconv::Iconv>

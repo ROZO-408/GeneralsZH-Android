@@ -59,7 +59,7 @@ static const char *getRegistryIniRoot(HKEY root)
 }
 
 // GeneralsX @feature GitHubCopilot 29/03/2026 Route low-level non-Windows registry reads through registry.ini.
-Bool  getStringFromRegistry(HKEY root, AsciiString path, AsciiString key, AsciiString& val)
+Bool  getStringFromRegistry(HKEY root, const AsciiString& path, const AsciiString& key, AsciiString& val)
 {
 	std::string storedValue;
 	if (!RegistryIni::ReadString(getRegistryIniRoot(root), path.str(), key.str(), storedValue))
@@ -71,7 +71,7 @@ Bool  getStringFromRegistry(HKEY root, AsciiString path, AsciiString key, AsciiS
 	return TRUE;
 }
 
-Bool getUnsignedIntFromRegistry(HKEY root, AsciiString path, AsciiString key, UnsignedInt& val)
+Bool getUnsignedIntFromRegistry(HKEY root, const AsciiString& path, const AsciiString& key, UnsignedInt& val)
 {
 	unsigned int storedValue = 0;
 	if (!RegistryIni::ReadUnsignedInt(getRegistryIniRoot(root), path.str(), key.str(), storedValue))
@@ -83,12 +83,12 @@ Bool getUnsignedIntFromRegistry(HKEY root, AsciiString path, AsciiString key, Un
 	return TRUE;
 }
 
-Bool setStringInRegistry( HKEY root, AsciiString path, AsciiString key, AsciiString val)
+Bool setStringInRegistry( HKEY root, const AsciiString& path, const AsciiString& key, const AsciiString& val)
 {
 	return RegistryIni::WriteString(getRegistryIniRoot(root), path.str(), key.str(), val.str()) ? TRUE : FALSE;
 }
 
-Bool setUnsignedIntInRegistry( HKEY root, AsciiString path, AsciiString key, UnsignedInt val)
+Bool setUnsignedIntInRegistry( HKEY root, const AsciiString& path, const AsciiString& key, UnsignedInt val)
 {
 	return RegistryIni::WriteUnsignedInt(getRegistryIniRoot(root), path.str(), key.str(), val) ? TRUE : FALSE;
 }
@@ -99,7 +99,7 @@ Bool setUnsignedIntInRegistry( HKEY root, AsciiString path, AsciiString key, Uns
 // Pattern: CNC_GENERALS_<UPPERCASED_KEY> for base Generals,
 //          CNC_ZH_<UPPERCASED_KEY> for Zero Hour.
 // Example: export CNC_GENERALS_INSTALLPATH=/path/to/generals/
-static Bool getEnvVar(const char *prefix, AsciiString key, AsciiString& val)
+static Bool getEnvVar(const char *prefix, const AsciiString& key, AsciiString& val)
 {
 	char envName[256] = { 0 };
 	const char* keyStr = key.str();
@@ -240,7 +240,7 @@ static Bool tryAutoDetectLanguage(AsciiString& val)
 	return FALSE;
 }
 
-Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiString& val)
+Bool GetStringFromGeneralsRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val)
 {
 	// Try environment variable first: CNC_GENERALS_INSTALLPATH, etc.
 	if (getEnvVar("CNC_GENERALS_", key, val))
@@ -248,12 +248,12 @@ Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiStrin
 
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
 	fullPath.concat(path);
-	if (getStringFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val))
+	if (getStringFromRegistry(HKEY_CURRENT_USER, fullPath, key, val))
 	{
 		return TRUE;
 	}
 
-	if (getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val))
+	if (getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath, key, val))
 	{
 		return TRUE;
 	}
@@ -268,7 +268,7 @@ Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiStrin
 	return FALSE;
 }
 
-Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
+Bool GetStringFromRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val)
 {
 	// Try environment variable: CNC_ZH_INSTALLPATH, CNC_ZH_LANGUAGE, etc.
 	if (getEnvVar("CNC_ZH_", key, val))
@@ -276,12 +276,12 @@ Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
 
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Command and Conquer Generals Zero Hour";
 	fullPath.concat(path);
-	if (getStringFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val))
+	if (getStringFromRegistry(HKEY_CURRENT_USER, fullPath, key, val))
 	{
 		return TRUE;
 	}
 
-	if (getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val))
+	if (getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath, key, val))
 	{
 		return TRUE;
 	}
@@ -296,16 +296,16 @@ Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
 	return FALSE;
 }
 
-Bool GetUnsignedIntFromRegistry(AsciiString path, AsciiString key, UnsignedInt& val)
+Bool GetUnsignedIntFromRegistry(const AsciiString& path, const AsciiString& key, UnsignedInt& val)
 {
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Command and Conquer Generals Zero Hour";
 	fullPath.concat(path);
-	if (getUnsignedIntFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val))
+	if (getUnsignedIntFromRegistry(HKEY_CURRENT_USER, fullPath, key, val))
 	{
 		return TRUE;
 	}
 
-	return getUnsignedIntFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val);
+	return getUnsignedIntFromRegistry(HKEY_LOCAL_MACHINE, fullPath, key, val);
 }
 
 #else // Windows implementation
@@ -394,7 +394,7 @@ Bool setUnsignedIntInRegistry( HKEY root, AsciiString path, AsciiString key, Uns
 	return (returnValue == ERROR_SUCCESS);
 }
 
-Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiString& val)
+Bool GetStringFromGeneralsRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val)
 {
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
 
@@ -408,7 +408,7 @@ Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiStrin
 	return getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val);
 }
 
-Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
+Bool GetStringFromRegistry(const AsciiString& path, const AsciiString& key, AsciiString& val)
 {
 #if RTS_GENERALS
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
@@ -426,7 +426,7 @@ Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
 	return getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val);
 }
 
-Bool GetUnsignedIntFromRegistry(AsciiString path, AsciiString key, UnsignedInt& val)
+Bool GetUnsignedIntFromRegistry(const AsciiString& path, const AsciiString& key, UnsignedInt& val)
 {
 #if RTS_GENERALS
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";

@@ -275,8 +275,13 @@ static Bool sanitizeConfiguredPath(const char* rawValue, AsciiString& sanitizedP
 }
 
 template <typename TBigFileSystem>
-static Bool tryLoadBigFiles(TBigFileSystem* fileSystem, const AsciiString& directory, const char* sourceTag, Bool overwrite = FALSE)
+static Bool tryLoadBigFiles(TBigFileSystem* fileSystem, const AsciiString& directory, const char* sourceTag, Bool overwrite = TRUE)
 {
+	// GeneralsX @bugfix android-port 06/07/2026 Default overwrite=TRUE so that
+	// ZH BIG files (INIZH.big, loaded after INI.big alphabetically) override
+	// base Generals files when both are in the same directory. With FALSE,
+	// the base version of shared files (e.g. Locomotor.ini) would win,
+	// missing ZH-specific entries like SpectreGunshipTransitLocomotor.
 	if (directory.isEmpty()) {
 		return FALSE;
 	}
@@ -411,7 +416,7 @@ static Bool loadPrimaryGameAssets(TBigFileSystem* fileSystem, AsciiString* loade
 	}
 
 	DEBUG_LOG(("StdBIGFileSystem::init - trying current working directory as last-resort assets path"));
-	if (fileSystem->loadBigFilesFromDirectory("", "*.big")) {
+	if (fileSystem->loadBigFilesFromDirectory("", "*.big", TRUE)) {
 		fprintf(stderr, "[ASSET_ROOT] Selected source=current-working-directory\n");
 		if (loadedDirectory != nullptr) {
 			*loadedDirectory = AsciiString::TheEmptyString;

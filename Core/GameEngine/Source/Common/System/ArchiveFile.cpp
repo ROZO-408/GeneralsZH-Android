@@ -131,6 +131,10 @@ void ArchiveFile::getFileListInDirectory(const AsciiString& currentDirectory, co
 	tokenizer.toLower();
 	tokenizer.nextToken(&token, "\\/");
 
+#if defined(__ANDROID__)
+	// Minimal diagnostic — only log if this archive has 'ini' at root level
+#endif
+
 	while (!token.isEmpty()) {
 
 		DetailedArchivedDirectoryInfoMap::const_iterator it = dirInfo->m_directories.find(token);

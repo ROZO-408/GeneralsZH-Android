@@ -89,7 +89,9 @@ class STLSpecialAlloc;
 #include <stdlib.h>
 #include <sys/stat.h>
 #ifdef _WIN32
+    #if !defined(__ANDROID__)
     #include <sys/timeb.h>
+    #endif
 #endif
 #include <sys/types.h>
 #ifdef _WIN32

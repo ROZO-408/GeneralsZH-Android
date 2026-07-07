@@ -270,10 +270,19 @@ if(SAGE_USE_OPENAL)
     )
     # FFmpegFile.cpp is required by OpenALAudioCache for audio decoding;
     # add it here when RTS_BUILD_OPTION_FFMPEG has not already provided it.
+    # GeneralsX @feature android-port 06/07/2026 Android has no ffmpeg yet; use
+    # the stub implementation so the engine links (audio is silent until ffmpeg
+    # is hand-built for Android).
     if(NOT RTS_BUILD_OPTION_FFMPEG)
-        target_sources(corei_gameenginedevice_private INTERFACE
-            Source/VideoDevice/FFmpeg/FFmpegFile.cpp
-        )
+        if(ANDROID)
+            target_sources(corei_gameenginedevice_private INTERFACE
+                Source/VideoDevice/FFmpeg/FFmpegFileStub.cpp
+            )
+        else()
+            target_sources(corei_gameenginedevice_private INTERFACE
+                Source/VideoDevice/FFmpeg/FFmpegFile.cpp
+            )
+        endif()
     endif()
 endif()
 

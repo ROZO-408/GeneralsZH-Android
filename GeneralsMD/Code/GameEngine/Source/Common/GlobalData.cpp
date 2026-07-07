@@ -1450,6 +1450,14 @@ AsciiString GlobalData::BuildUserDataPathFromRegistry()
 		}
 	}
 
+#elif defined(__ANDROID__)
+	// GeneralsX @feature android-port 06/07/2026 Android user data directory.
+	// Android has no HOME env var by default; fall back to CWD (SDL3Main.cpp's
+	// bootstrap chdir'd to the app's internal storage). Creating directories via
+	// std::filesystem early in GlobalData's ctor crashed (DMA not ready for the
+	// path string operations), so just use "./" — the CWD is already correct.
+	userDataDir = "./";
+
 #else
 	// GeneralsX @feature Bender 01/04/2026 Linux user data directory
 	// Uses XDG Base Directory specification for Zero Hour

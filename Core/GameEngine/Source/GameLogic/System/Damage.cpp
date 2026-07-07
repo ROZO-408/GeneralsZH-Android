@@ -73,9 +73,9 @@ const char* const DamageTypeFlags::s_bitNameList[] =
 	"STEALTHJET_MISSILES",
 	"MOLOTOV_COCKTAIL",
 	"COMANCHE_VULCAN",
-#if RTS_GENERALS
+	// GeneralsX @bugfix android-port 06/07/2026 FLESHY_SNIPER must be present
+	// for ZH too (see Damage.h) since ZH loads the base Generals Weapon.ini.
 	"FLESHY_SNIPER",
-#endif
 	"SUBDUAL_MISSILE",
 	"SUBDUAL_VEHICLE",
 	"SUBDUAL_BUILDING",

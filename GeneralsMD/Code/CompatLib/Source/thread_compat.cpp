@@ -58,5 +58,14 @@ void* CreateThread(void *lpSecure, size_t dwStackSize, start_routine lpStartAddr
 
 int TerminateThread(void *hThread, unsigned long dwExitCode)
 {
+#if defined(__ANDROID__)
+	// GeneralsX @feature android-port 06/07/2026 Android bionic has no pthread_cancel.
+	// Threads in this engine are short-lived worker/audio threads that exit on their
+	// own; forcing cancellation is unsafe anyway. Return success (Windows semantics:
+	// nonzero = success) and let the thread finish naturally.
+	(void)hThread; (void)dwExitCode;
+	return 1;
+#else
 	return pthread_cancel((pthread_t)hThread);
+#endif
 }
