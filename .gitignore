@@ -34,7 +34,6 @@ CPackSourceConfig.cmake
 .cproject
 .project
 *~
-!*.exe
 *.lastbuildstate
 *.unsuccessfulbuild
 *.tlog
@@ -96,3 +95,12 @@ logs_*.zip
 # iOS shell-app build products (XcodeGen regenerates the project from ios/project.yml)
 ios/build/
 ios/GeneralsXZH.xcodeproj/
+
+## Android build artifacts (never commit APKs, jniLibs, or Gradle cache)
+*.apk
+android/**/build/
+android/**/.cxx/
+android/.gradle/
+android/app/src/main/jniLibs/
+android/local.properties
+android/.idea/
