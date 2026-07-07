@@ -20,8 +20,8 @@ This is the **first-ever DXVK build for Android**.
 | DXVK D3D8→Vulkan rendering | ✅ |
 | Main menu renders with text | ✅ |
 | Touch input (tap, drag, pinch) | ✅ |
-| Audio system initialized | ✅ |
-| Full gameplay session | ✅ |
+| Audio playback | ❌ OpenAL initializes but no sound yet |
+| Full gameplay session (skirmish) | ✅ |
 
 **Tested on:** OnePlus Pad 2 (Snapdragon 8 Gen 3, Adreno 830, 3392×2400)
 
