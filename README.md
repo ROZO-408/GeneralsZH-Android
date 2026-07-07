@@ -25,8 +25,6 @@ This is the **first-ever DXVK build for Android**.
 
 **Tested on:** OnePlus Pad 2 (Snapdragon 8 Gen 3, Adreno 830, 3392×2400)
 
-**Tested on:** OnePlus Pad 2 (Snapdragon 8 Gen 3, Adreno 830, 3392×2400)
-
 ---
 
 ## How to Play
