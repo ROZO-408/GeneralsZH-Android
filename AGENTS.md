@@ -1,7 +1,7 @@
 # GeneralsX: Instructions for AI Coding Agents
 
 ## What I Am
-GeneralsX is a cross-platform port of Command & Conquer: Generals Zero Hour for **Linux and macOS**, porting legacy Windows DirectX 8 + Miles Sound code to a modern stack (SDL3 + DXVK + OpenAL + 64-bit). This is a **massive C++ game engine** (~500k LOC) preserving retail gameplay while modernizing the platform layer.
+GeneralsX is a cross-platform port of Command & Conquer: Generals Zero Hour for **Linux, macOS, iOS/iPadOS, and Android**, porting legacy Windows DirectX 8 + Miles Sound code to a modern stack (SDL3 + DXVK + OpenAL + 64-bit). This is a **massive C++ game engine** (~500k LOC) preserving retail gameplay while modernizing the platform layer.
 
 ## Must-Load Context
 Before starting work, read:
@@ -17,7 +17,8 @@ Before starting work, read:
 - `Core/GameEngineDevice/Source/`
 
 ## Platform Focus
-- **Active**: Linux (`linux64-deploy`), macOS (`macos-vulkan`)
+- **Active**: Linux (`linux64-deploy`), macOS (`macos-vulkan`), iOS/iPadOS (`ios-vulkan`)
+- **In Progress**: Android tablets (`android-vulkan`) — scaffolding landed 2026-07-06, runtime UNVERIFIED. The DXVK-on-Android spike is the go/no-go gate. See `docs/WORKDIR/phases/PHASE06_ANDROID_PORT.md`.
 - **Future/Exploratory**: Windows (MinGW path, issue #29)
 - **Legacy**: VC6 + DirectX 8 + Miles (reference only)
 
