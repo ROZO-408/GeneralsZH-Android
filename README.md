@@ -1,5 +1,7 @@
 # Command & Conquer: Generals Zero Hour — Android
 
+<img src="assets/android-screenshot.png" alt="Generals Zero Hour main menu running on Android tablet" width="600">
+
 **The full 2003 RTS engine running natively on Android tablets** — not emulation,
 not a compatibility layer. The real C++ engine compiled for arm64, rendering
 DirectX 8 → [DXVK](https://github.com/doitsujin/dxvk) → Vulkan on Adreno/Mali GPUs.
@@ -19,7 +21,9 @@ This is the **first-ever DXVK build for Android**.
 | Main menu renders with text | ✅ |
 | Touch input (tap, drag, pinch) | ✅ |
 | Audio system initialized | ✅ |
-| Full gameplay session | 🔄 In progress |
+| Full gameplay session | ✅ |
+
+**Tested on:** OnePlus Pad 2 (Snapdragon 8 Gen 3, Adreno 830, 3392×2400)
 
 **Tested on:** OnePlus Pad 2 (Snapdragon 8 Gen 3, Adreno 830, 3392×2400)
 
