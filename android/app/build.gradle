@@ -67,10 +67,16 @@ android {
 
     // Point at the repo-root CMakeLists.txt (this file is at android/app/, repo
     // root is two levels up).
-    externalNativeBuild {
-        cmake {
-            path "../../CMakeLists.txt"
-            version "3.25.0+"
+    // GeneralsX @build android-port 07/07/2026 Allow APK repackaging from
+    // pre-staged .so libs without re-running the full CMake build. Set
+    // -PSAGE_SKIP_NATIVE_BUILD=true (or gradle -PSAGE_SKIP_NATIVE_BUILD) to
+    // package only — used when the .so artifacts are already in jniLibs/.
+    if (!project.hasProperty('SAGE_SKIP_NATIVE_BUILD')) {
+        externalNativeBuild {
+            cmake {
+                path "../../CMakeLists.txt"
+                version "3.25.0+"
+            }
         }
     }
 
