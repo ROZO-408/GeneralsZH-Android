@@ -29,7 +29,9 @@ ANDROID_DIR="${REPO_ROOT}/android"
 APP_DIR="${ANDROID_DIR}/app"
 JNI_LIBS="${APP_DIR}/src/main/jniLibs/${ABI}"
 ASSETS="${APP_DIR}/src/main/assets"
-BUILD_DIR="${REPO_ROOT}/build/android-vulkan"
+# GeneralsX @build android-port 07/07/2026 The CMake android-vulkan preset
+# builds into build/android-game/ (the preset name), not build/android-vulkan/.
+BUILD_DIR="${REPO_ROOT}/build/android-game"
 
 # ---- 1. Prerequisites ---------------------------------------------------------
 : "${ANDROID_NDK_HOME:=${HOME}/Library/Android/sdk/ndk/27.1.12297006}"
@@ -77,6 +79,44 @@ copy_if_exists "${BUILD_DIR}/_deps/sdl3-build/libSDL3.so"        "libSDL3.so"
 copy_if_exists "${BUILD_DIR}/_deps/sdl3_image-build/libSDL3_image.so" "libSDL3_image.so"
 # OpenAL (FetchContent build).
 copy_if_exists "${BUILD_DIR}/openal-soft/libopenal.so" "libopenal.so"
+# FreeType (FetchContent build — engine dlopens it for font rendering).
+copy_if_exists "${BUILD_DIR}/_deps/freetype-build/libfreetype.so" "libfreetype.so"
+# GLM (FetchContent build — engine dlopens it for matrix math).
+copy_if_exists "${BUILD_DIR}/_deps/glm-build/glm/libglm.so" "libglm.so"
+# GameSpycompat shim (built by the CMake engine build).
+copy_if_exists "${BUILD_DIR}/libgamespy.so" "libgamespy.so"
+# libc++_shared.so (from the NDK — required by libc++ runtime).
+copy_if_exists "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "libc++_shared.so"
+# libmain.so — the engine itself, built by externalNativeBuild into the APK.
+# When packaging from pre-staged libs (no CMake), it must be staged manually.
+# Strip debug symbols to reduce the 85MB debug .so to ~16MB release size.
+ENGINE_MAIN="${BUILD_DIR}/GeneralsMD/Code/Main/libmain.so"
+if [[ -f "${ENGINE_MAIN}" ]]; then
+    "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip" --strip-debug \
+        -o "${JNI_LIBS}/libmain.so" "${ENGINE_MAIN}"
+    echo "    staged libmain.so (stripped)"
+elif [[ ! -f "${JNI_LIBS}/libmain.so" ]]; then
+    echo "WARNING: libmain.so not found at ${ENGINE_MAIN} — the APK will have no engine"
+fi
+
+# ---- 3b. Verify the full runtime library set is present -----------------------
+# The engine dlopens all of these at startup; a missing one crashes on launch
+# with "dlopen failed: library X not found". Assert before building the APK.
+REQUIRED_LIBS=(
+    libdxvk_d3d8.so libdxvk_d3d9.so libSDL3.so libSDL3_image.so
+    libopenal.so libfreetype.so libglm.so libgamespy.so
+    libc++_shared.so libmain.so
+)
+MISSING=()
+for lib in "${REQUIRED_LIBS[@]}"; do
+    [[ -f "${JNI_LIBS}/${lib}" ]] || MISSING+=("${lib}")
+done
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "ERROR: Missing native libraries: ${MISSING[*]}"
+    echo "       These are dlopen'd at runtime and must be in jniLibs/arm64-v8a/."
+    exit 1
+fi
+echo "    all ${#REQUIRED_LIBS[@]} runtime libraries present"
 
 # ---- 4. Stage dxvk.conf + fonts into assets -----------------------------------
 echo "==> Staging runtime config into assets/"
@@ -127,6 +167,6 @@ fi
 echo ""
 echo "Done. Install with: adb install -r ${SIGNED_APK}"
 echo "GameData note: this script does NOT bundle the ~1.5GB of .big archives."
-echo "  Push them to the device with:"
-echo "  adb shell mkdir -p /data/data/me.generalsx.zh/files/GameData"
-echo "  adb push <local GameData> /data/data/me.generalsx.zh/files/GameData/"
+echo "  Push them to the device's external storage (matches the README):"
+echo "  adb shell mkdir -p /sdcard/Android/data/me.generalsx.zh/files/GameData/Data"
+echo "  adb push <local Data/*.big> /sdcard/Android/data/me.generalsx.zh/files/GameData/Data/"
