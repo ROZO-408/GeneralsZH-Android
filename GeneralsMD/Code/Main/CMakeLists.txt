@@ -117,3 +117,13 @@ endif()
 if(MINGW AND COMMAND add_debug_strip_target)
     add_debug_strip_target(z_generals)
 endif()
+
+# GeneralsX @bugfix android-port 14/07/2026 Hide operator new/delete from the
+# dynamic symbol table so DXVK (.so) and other loaded libraries use libc++'s
+# default operator new/delete (plain malloc/free) instead of the engine's pool.
+# Without this, DXVK's internal allocations go through TheDynamicMemoryAllocator,
+# corrupting DXVK's free-lists and crashing in DxvkResourceAllocationPool::alloc().
+# NOTE: This approach is still being tested. The version script may need refinement.
+# if(ANDROID)
+#     ... (WIP — see android.md for investigation notes)
+# endif()
