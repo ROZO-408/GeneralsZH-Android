@@ -26,7 +26,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
-
+          
+      - name: Install Gradle
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gradle
+    
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses
 
@@ -37,13 +42,6 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "ndk;27.1.12297006" \
-
-      - name: Grant execute permission
-        run: chmod +x android/gradlew
-
-      - name: Build Debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
