@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,29 +22,30 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install CMake and Ninja
+      - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build
-          
-      - name: Install Gradle
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gradle
-    
-      - name: Accept SDK licenses
-        run: yes | sdkmanager --licenses
+          sudo apt-get install -y ninja-build cmake unzip
 
-      - name: Install Android packages
+      - name: Install Android SDK packages
         run: |
+          yes | sdkmanager --licenses
           sdkmanager \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
-            "ndk;27.1.12297006" \
+            "ndk;27.1.12297006"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        working-directory: android
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: GeneralsZH-Debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
