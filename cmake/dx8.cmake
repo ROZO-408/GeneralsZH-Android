@@ -37,8 +37,8 @@ elseif(ANDROID)
   # is the native non-Wine build path that already works on Linux/iOS, retargeted
   # to Android aarch64. libvulkan.so is a real system library on Android (API 24+),
   # so unlike iOS there is no MoltenVK to fetch/embed/patch.
-  find_program(MESON_EXECUTABLE meson HINTS /usr/local/bin /opt/homebrew/bin)
-  find_program(NINJA_EXECUTABLE ninja HINTS /usr/local/bin /opt/homebrew/bin)
+  find_program(MESON_EXECUTABLE NAMES meson REQUIRED)
+  find_program(NINJA_EXECUTABLE NAMES ninja ninja-build REQUIRED)
   if(NOT MESON_EXECUTABLE)
     message(FATAL_ERROR "DXVK Android build requires meson: brew install meson")
   endif()
