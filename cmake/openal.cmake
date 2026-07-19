@@ -90,6 +90,7 @@ if(SAGE_USE_OPENAL)
 
         # Point OpenAL Soft's CMake at the fetched Oboe source so it does
         # add_subdirectory(${OBOE_SOURCE}) and owns the oboe target.
+        set(OBOE_SOURCE "${oboe_SOURCE_DIR}" CACHE PATH "Oboe source directory" FORCE)
         # Disable -Wsuggest-override being treated as an error in Oboe
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=suggest-override")
         set(ALSOFT_REQUIRE_OBOE ON CACHE BOOL "Require Oboe backend on Android" FORCE)
