@@ -45,6 +45,7 @@ target_link_libraries(z_generals PRIVATE
     z_gameenginedevice
     zi_always
 )
+
 if(ANDROID)
     add_dependencies(z_generals dxvk_d3d8_install)
 endif()
@@ -71,7 +72,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/GeneratedVersion.h
 )
 
 # Based on original binary values for these variables.
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/BuildVersion.h
+file(WRI1TE ${CMAKE_CURRENT_BINARY_DIR}/BuildVersion.h
 "#pragma once
 
 #define VERSION_MAJOR 1
