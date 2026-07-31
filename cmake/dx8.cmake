@@ -153,6 +153,10 @@ Cflags: -I\${includedir}
     DEPENDS "${CMAKE_BINARY_DIR}/libdxvk_d3d8.so"
             "${CMAKE_BINARY_DIR}/libdxvk_d3d9.so"
   )
+  if(ANDROID)
+      add_library(dxvk_android INTERFACE)
+      add_dependencies(dxvk_android dxvk_d3d8_install)
+  endif()
 
   set(DXVK_INCLUDE_DIR "${DXVK_SOURCE_DIR}/include/native" CACHE PATH "DXVK native headers")
   set(dxvk_SOURCE_DIR "${DXVK_SOURCE_DIR}" CACHE PATH "DXVK source directory (Android)")
