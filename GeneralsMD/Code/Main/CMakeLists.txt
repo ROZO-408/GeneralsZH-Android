@@ -45,7 +45,9 @@ target_link_libraries(z_generals PRIVATE
     z_gameenginedevice
     zi_always
 )
-
+if(ANDROID)
+    add_dependencies(z_generals dxvk_d3d8_install)
+endif()
 # GeneralsX @feature android-port 06/07/2026 Android log for __android_log_print
 # and android for AAssetManager (font extraction from APK assets).
 if(ANDROID)
