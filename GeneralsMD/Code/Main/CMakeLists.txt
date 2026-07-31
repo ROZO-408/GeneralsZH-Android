@@ -55,6 +55,12 @@ if(ANDROID)
     target_link_libraries(z_generals PRIVATE log android)
 endif()
 
+if(ANDROID)
+    add_dependencies(z_generals
+        dxvk_android_build
+        dxvk_d3d8_install
+    )
+endif()
 # Linux SDL3 windowing/input (Phase 1)
 # GeneralsX @build BenderAI 11/02/2026
 if(SAGE_USE_SDL3)
