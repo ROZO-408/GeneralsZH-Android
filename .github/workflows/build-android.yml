@@ -53,8 +53,9 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
         run: |
           export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
-          gradle -p android assembleDebug --stacktrace --info
-
+          chmod +x scripts/build/android/package-android-zh.sh
+          ./scripts/build/android/package-android-zh.sh
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
