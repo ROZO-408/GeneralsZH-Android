@@ -34,9 +34,18 @@ ASSETS="${APP_DIR}/src/main/assets"
 BUILD_DIR="${REPO_ROOT}/build/android-game"
 
 # ---- 1. Prerequisites ---------------------------------------------------------
-: "${ANDROID_NDK_HOME:=${HOME}/Library/Android/sdk/ndk/27.1.12297006}"
-export ANDROID_NDK_HOME
-export ANDROID_HOME="${ANDROID_HOME:-${HOME}/Library/Android/sdk}"
+if [[ -z "${ANDROID_HOME:-}" ]]; then
+    export ANDROID_HOME="${ANDROID_SDK_ROOT}"
+fi
+
+if [[ -z "${ANDROID_NDK_HOME:-}" ]]; then
+    export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/27.1.12297006"
+fi
+if [[ "$(uname)" == "Darwin" ]]; then
+    NDK_HOST=darwin-x86_64
+else
+    NDK_HOST=linux-x86_64
+fi
 if [[ ! -d "${ANDROID_NDK_HOME}" ]]; then
     echo "ERROR: ANDROID_NDK_HOME not found: ${ANDROID_NDK_HOME}"
     exit 1
@@ -56,6 +65,7 @@ GX_FONTS="${HOME}/GeneralsX/android-staging/fonts" bash scripts/build/android/st
 
 # ---- 3. Copy native runtime .so into jniLibs ----------------------------------
 echo "==> Staging native libraries into jniLibs/${ABI}"
+find "${BUILD_DIR}" -name "*.so" || true
 mkdir -p "${JNI_LIBS}"
 
 # The CMake build produces these in build/android-vulkan/ (or the Gradle build
@@ -73,6 +83,9 @@ copy_if_exists() {
 
 # DXVK d3d8 + d3d9 (built by the CMake dxvk_android_build ExternalProject).
 copy_if_exists "${BUILD_DIR}/libdxvk_d3d8.so"   "libdxvk_d3d8.so"
+echo "Searching DXVK..."
+find "${BUILD_DIR}" -name "libdxvk_d3d8.so" || true
+find "${BUILD_DIR}" -name "libdxvk_d3d9.so" || true
 copy_if_exists "${BUILD_DIR}/libdxvk_d3d9.so"   "libdxvk_d3d9.so"
 # SDL3 + SDL3_image (FetchContent build).
 copy_if_exists "${BUILD_DIR}/_deps/sdl3-build/libSDL3.so"        "libSDL3.so"
@@ -86,13 +99,13 @@ copy_if_exists "${BUILD_DIR}/_deps/glm-build/glm/libglm.so" "libglm.so"
 # GameSpycompat shim (built by the CMake engine build).
 copy_if_exists "${BUILD_DIR}/libgamespy.so" "libgamespy.so"
 # libc++_shared.so (from the NDK — required by libc++ runtime).
-copy_if_exists "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "libc++_shared.so"
+copy_if_exists "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/${NDK_HOST}/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "libc++_shared.so"
 # libmain.so — the engine itself, built by externalNativeBuild into the APK.
 # When packaging from pre-staged libs (no CMake), it must be staged manually.
 # Strip debug symbols to reduce the 85MB debug .so to ~16MB release size.
 ENGINE_MAIN="${BUILD_DIR}/GeneralsMD/Code/Main/libmain.so"
 if [[ -f "${ENGINE_MAIN}" ]]; then
-    "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip" --strip-debug \
+    "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/${NDK_HOST}/bin/llvm-strip" --strip-debug \
         -o "${JNI_LIBS}/libmain.so" "${ENGINE_MAIN}"
     echo "    staged libmain.so (stripped)"
 elif [[ ! -f "${JNI_LIBS}/libmain.so" ]]; then
