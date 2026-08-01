@@ -1,3 +1,13 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Configure CMake
         run: |
           cmake -S . -B build/android-game \
@@ -32,16 +42,7 @@
           chmod +x scripts/build/android/package-android-zh.sh
           ./scripts/build/android/package-android-zh.sh
           
-name: Build Android APK
 
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
@@ -106,7 +107,7 @@ jobs:
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-          run: |
+        run: |
             chmod +x scripts/build/android/package-android-zh.sh
             ./scripts/build/android/package-android-zh.sh
           
