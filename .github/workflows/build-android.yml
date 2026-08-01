@@ -23,6 +23,19 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
+      - name: Disable DXVK native windowing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("references/fbraz3-dxvk/meson.build")
+          s = p.read_text()
+          s = s.replace(
+              "error('SDL3, SDL2, or GLFW are required to build dxvk-native')",
+              "message('Skipping dxvk-native on Android')"
+          )
+          p.write_text(s)
+          PY
+
       - name: Verify repository
         run: |
           pwd
