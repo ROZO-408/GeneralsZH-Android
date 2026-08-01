@@ -78,7 +78,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/GeneratedVersion.h
 )
 
 # Based on original binary values for these variables.
-file(WRI1TE ${CMAKE_CURRENT_BINARY_DIR}/BuildVersion.h
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/BuildVersion.h
 "#pragma once
 
 #define VERSION_MAJOR 1
