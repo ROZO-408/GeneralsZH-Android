@@ -31,13 +31,16 @@ jobs:
             -DRTS_BUILD_OPTION_SAGE_PATCH=OFF
 
       - name: Build native engine
-        run: |
-          cmake --build build/android-game --parallel
-
-      - name: Package APK
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+        run: |
+          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
+
+          cmake --preset android-vulkan
+          cmake --build build/android-vulkan --parallel
+
+      - name: Package APK
         run: |
           chmod +x scripts/build/android/package-android-zh.sh
           ./scripts/build/android/package-android-zh.sh
