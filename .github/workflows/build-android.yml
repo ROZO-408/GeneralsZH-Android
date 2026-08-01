@@ -8,6 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug paths
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -name CMakeLists.txt
+    
       - name: Configure CMake
         run: |
           cmake -S . -B build/android-game \
