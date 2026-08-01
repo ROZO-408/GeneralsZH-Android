@@ -78,27 +78,33 @@ elseif(ANDROID)
   configure_file(${CMAKE_SOURCE_DIR}/cmake/meson-android-aarch64-cross.ini.in
                  ${CMAKE_BINARY_DIR}/meson-android-aarch64-cross.ini @ONLY)
 
-  if(SAGE_DXVK_USE_LOCAL_FORK AND EXISTS "${DXVK_LOCAL_FORK_DIR}/.git")
-    set(DXVK_SOURCE_DIR "${DXVK_LOCAL_FORK_DIR}")
-    # Apply the Android patch idempotently (same pattern as the iOS patch).
-    execute_process(
-      COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply --reverse --check "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
-      RESULT_VARIABLE DXVK_PATCH_ALREADY_APPLIED
-      ERROR_QUIET)
-    if(NOT DXVK_PATCH_ALREADY_APPLIED EQUAL 0)
-      execute_process(
-        COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
-        RESULT_VARIABLE DXVK_PATCH_RESULT)
-      if(NOT DXVK_PATCH_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to apply Patches/dxvk-android.patch to references/fbraz3-dxvk.")
-      endif()
-      message(STATUS "DXVK Android: applied Patches/dxvk-android.patch")
+  if(SAGE_DXVK_USE_LOCAL_FORK)
+    if(EXISTS "${DXVK_LOCAL_FORK_DIR}/meson.build")
+        set(DXVK_SOURCE_DIR "${DXVK_LOCAL_FORK_DIR}")
+        message(STATUS "Using local DXVK source: ${DXVK_SOURCE_DIR}")
+
+        execute_process(
+            COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply --reverse --check
+                    "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
+            RESULT_VARIABLE DXVK_PATCH_ALREADY_APPLIED
+            ERROR_QUIET)
+
+        if(NOT DXVK_PATCH_ALREADY_APPLIED EQUAL 0)
+            execute_process(
+                COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply
+                        "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
+                RESULT_VARIABLE DXVK_PATCH_RESULT)
+
+            if(NOT DXVK_PATCH_RESULT EQUAL 0)
+                message(FATAL_ERROR "Failed to apply Android DXVK patch.")
+            endif()
+        endif()
     else()
-      message(STATUS "DXVK Android: Patches/dxvk-android.patch already applied")
+        message(FATAL_ERROR
+            "DXVK source not found: ${DXVK_LOCAL_FORK_DIR}\n"
+            "Expected meson.build in that directory.")
     endif()
-  else()
-    message(FATAL_ERROR "Android DXVK requires the local fork submodule. Run: git submodule update --init references/fbraz3-dxvk")
-  endif()
+endif()
 
   set(DXVK_BUILD_DIR  "${CMAKE_BINARY_DIR}/_deps/dxvk-build-android")
   set(DXVK_D3D8_LIB  "${DXVK_BUILD_DIR}/src/d3d8/libdxvk_d3d8.so")
