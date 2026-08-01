@@ -61,7 +61,8 @@ jobs:
             meson \
             pkg-config \
             python3-pip \
-            cmake
+            cmake \
+            glslang-tools
 
       - name: Install Android packages
         run: |
