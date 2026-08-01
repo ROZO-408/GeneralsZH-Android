@@ -420,7 +420,7 @@
             "configurePreset": "linux64-deploy",
             "displayName": "Build Linux 64-bit DXVK/SDL3/OpenAL Release",
             "description": "Build Linux 64-bit with DXVK graphics, SDL3 windowing, and OpenAL audio"
-        }
+        },
         {
             "name": "android-vulkan",
             "configurePreset": "android-vulkan",
