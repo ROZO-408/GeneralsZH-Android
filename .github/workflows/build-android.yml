@@ -92,14 +92,23 @@ jobs:
       - name: Make package script executable
         run: chmod +x scripts/build/android/package-android-zh.sh
 
-      - name: Build Android APK
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-        run: |
-          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
-          chmod +x scripts/build/android/package-android-zh.sh
-          ./scripts/build/android/package-android-zh.sh
+      - name: Configure Android
+  env:
+    ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+  run: |
+    cmake --preset android-vulkan
+
+- name: Build Android
+  run: |
+    cmake --build --preset android-vulkan
+
+- name: Package APK
+  env:
+    ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+    ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+  run: |
+    chmod +x scripts/build/android/package-android-zh.sh
+    ./scripts/build/android/package-android-zh.sh
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
