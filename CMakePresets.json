@@ -282,11 +282,12 @@
         {
             "name": "android-vulkan",
             "displayName": "Android (Vulkan + SDL3 + OpenAL) arm64-v8a Tablet",
-            "inherits": "default-vcpkg",
+            "inherits": "default",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "description": "GeneralsX @feature android-port 06/07/2026 Android tablet port: arm64-v8a with native Vulkan (no MoltenVK) for graphics, SDL3 for windowing/touch, OpenAL (Oboe/AAudio) for audio. Targets Zero Hour only. Requires the Android NDK at $ANDROID_NDK_HOME and the fbraz3-dxvk submodule for the DXVK-from-source build. Native build is driven from android/ via Gradle externalNativeBuild; this preset is used for standalone/native iteration.",
             "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_SYSTEM_NAME": "Android",
