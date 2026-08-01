@@ -50,8 +50,9 @@ if [[ ! -d "${ANDROID_NDK_HOME}" ]]; then
     echo "ERROR: ANDROID_NDK_HOME not found: ${ANDROID_NDK_HOME}"
     exit 1
 fi
-if [[ ! -d "${REPO_ROOT}/references/fbraz3-dxvk/.git" ]]; then
-    echo "ERROR: DXVK fork submodule missing. Run: git submodule update --init references/fbraz3-dxvk"
+if [[ ! -f "${REPO_ROOT}/references/fbraz3-dxvk/meson.build" ]]; then
+    echo "ERROR: DXVK source missing at ${REPO_ROOT}/references/fbraz3-dxvk"
+    ls -la "${REPO_ROOT}/references" || true
     exit 1
 fi
 command -v gradle >/dev/null 2>&1 || command -v ./gradlew >/dev/null 2>&1 || {
