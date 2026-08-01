@@ -7,13 +7,56 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+
     steps:
-      - name: Debug paths
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;27.1.12297006"
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            meson \
+            pkg-config \
+            python3-pip
+
+      - name: Sync submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Verify source
         run: |
           pwd
           ls -la
           find . -maxdepth 3 -name CMakeLists.txt
-    
+          git submodule status
+
       - name: Configure CMake
         run: |
           cmake -S . -B build/android-game \
@@ -36,93 +79,19 @@ jobs:
             -DRTS_CRASHDUMP_ENABLE=OFF \
             -DRTS_BUILD_OPTION_SAGE_PATCH=OFF
 
-      - name: Build native engine
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+      - name: Build Android engine
         run: |
-          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
-
-          cmake --preset android-vulkan
-          cmake --build build/android-vulkan --parallel
+          cmake --build build/android-game --parallel
 
       - name: Package APK
         run: |
           chmod +x scripts/build/android/package-android-zh.sh
           ./scripts/build/android/package-android-zh.sh
-          
 
-      - name: Checkout source
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          
-      - name: Verify submodules
-        run: |
-          git submodule status
-          ls -la references
-          ls -la references/fbraz3-dxvk || true
-
-      - name: Initialize submodules
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-  
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake \
-            ninja-build \
-            meson \
-            pkg-config \
-            python3-pip
-
-      - name: Install Android SDK packages
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;27.1.12297006"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4           
-               
-      - name: Make package script executable
-        run: chmod +x scripts/build/android/package-android-zh.sh
-
-      - name: Configure Android
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-        run: |
-          cmake --preset android-vulkan
-
-      - name: Build Android
-        run: |
-          cmake --build --preset android-vulkan
-
-      - name: Package APK
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-        run: |
-            chmod +x scripts/build/android/package-android-zh.sh
-            ./scripts/build/android/package-android-zh.sh
-          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AndroidBuild
           path: |
             android/app/build/outputs/**/*.apk
+            build/**/*.apk
