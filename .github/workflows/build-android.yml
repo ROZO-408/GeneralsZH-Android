@@ -93,10 +93,10 @@ jobs:
         run: chmod +x scripts/build/android/package-android-zh.sh
 
       - name: Configure Android
-  env:
-    ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-  run: |
-    cmake --preset android-vulkan
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+        run: |
+          cmake --preset android-vulkan
 
       - name: Build Android
         run: |
