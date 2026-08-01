@@ -12,6 +12,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          
+      - name: Verify submodules
+        run: |
+          git submodule status
+          ls -la references
+          ls -la references/fbraz3-dxvk || true
 
       - name: Initialize submodules
         run: |
