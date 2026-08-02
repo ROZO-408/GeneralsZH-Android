@@ -42,6 +42,8 @@ set(WWAUDIO_SRC
     Utils.h
     WWAudio.cpp
     WWAudio.h
+    MilesStub.h
+    MilesStub.cpp
 )
 
 # @todo Promote this to STATIC library when WW3D2 is a STATIC library as well
