@@ -82,16 +82,28 @@ struct DRIVER_INFO_STRUCT {
 };
 
 // No-op defines for AIL functions
-#define AIL_set_sample_processor(sample, processor, filter) \
-    do { (void)(sample); (void)(processor); (void)(filter); } while(0)
+inline void AIL_set_sample_processor(
+    HSAMPLE,
+    int,
+    HPROVIDER)
+{
+}
 
-#define AIL_set_filter_sample_preference(sample, pref, value) \
-    do { (void)(sample); (void)(pref); (void)(value); } while(0)
+inline void AIL_set_filter_sample_preference(
+    HSAMPLE,
+    int,
+    float)
+{
+}
 
-#define AIL_allocate_sample_handle(driver) ((HSAMPLE)nullptr)
+inline HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
+{
+    return nullptr;
+}
 
-#define AIL_release_sample_handle(sample) \
-    do { (void)(sample); } while(0)
+inline void AIL_release_sample_handle(HSAMPLE)
+{
+}
 
 // Missing Miles API stubs
 inline void AIL_lock() {}
