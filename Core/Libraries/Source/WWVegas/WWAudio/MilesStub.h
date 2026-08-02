@@ -92,6 +92,17 @@ struct DRIVER_INFO_STRUCT {
 #define AIL_release_sample_handle(sample) \
     do { (void)(sample); } while(0)
 
+// Missing Miles API stubs
+inline void AIL_lock() {}
+inline void AIL_unlock() {}
+
+inline void AIL_set_3D_position(H3DSAMPLE, float, float, float) {}
+
+inline void AIL_set_3D_orientation(
+    H3DSAMPLE,
+    float, float, float,
+    float, float, float) {}
+
 #endif
 
 
