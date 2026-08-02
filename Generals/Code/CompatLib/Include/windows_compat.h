@@ -1,4 +1,4 @@
-1#pragma once
+#pragma once
 
 #include <string.h>  // For memset, used by GlobalMemoryStatus stub
 
