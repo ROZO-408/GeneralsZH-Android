@@ -44,6 +44,7 @@
 #else
 #include "MilesStub.h"
 #include "threads_compat.h"
+#include <cstring>
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -77,18 +78,34 @@ class MMSLockClass
 //
 //  Get_Filename_From_Path
 //
-__inline LPCTSTR
-Get_Filename_From_Path (LPCTSTR path)
-{
-	// Find the last occurrence of the directory deliminator
-	LPCTSTR filename = ::strrchr (path, '\\');
-	if (filename != nullptr) {
-		// Increment past the directory deliminator
-		filename ++;
-	} else {
-		filename = path;
-	}
+#if defined(SAGE_USE_OPENAL)
 
-	// Return the filename part of the path
-	return filename;
+__inline const char*
+Get_Filename_From_Path(const char* path)
+{
+    if (path == nullptr)
+        return nullptr;
+
+    const char* filename = strrchr(path, '/');
+    if (filename == nullptr)
+        filename = strrchr(path, '\\');
+
+    return (filename != nullptr) ? filename + 1 : path;
 }
+
+#else
+
+__inline LPCTSTR
+Get_Filename_From_Path(LPCTSTR path)
+{
+    LPCTSTR filename = ::strrchr(path, '\\');
+
+    if (filename != nullptr)
+        filename++;
+    else
+        filename = path;
+
+    return filename;
+}
+
+#endif
