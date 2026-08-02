@@ -75,6 +75,16 @@ typedef struct {
 } WAVEFORMAT;
 typedef WAVEFORMAT* LPWAVEFORMAT;
 
+typedef struct
+{
+    U32 format;
+    U32 data_len;
+    void* data_ptr;
+    U32 rate;
+    U32 bits;
+    U32 channels;
+} AILSOUNDINFO;
+
 // Driver info stub
 struct DRIVER_INFO_STRUCT {
     char name[256];
@@ -105,6 +115,26 @@ inline HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
 inline void AIL_release_sample_handle(HSAMPLE)
 {
 }
+inline void AIL_set_3D_velocity_vector(
+    H3DSAMPLE,
+    float,
+    float,
+    float)
+{
+}
+
+inline void AIL_set_3D_sample_distances(
+    H3DSAMPLE,
+    float,
+    float)
+{
+}
+
+inline void AIL_set_3D_sample_effects_level(
+    H3DSAMPLE,
+    float)
+{
+}
 
 // Missing Miles API stubs
 inline void AIL_lock() {}
@@ -122,12 +152,92 @@ inline void AIL_leave() {}
 inline void AIL_start_stream(HSTREAM) {}
 inline void AIL_pause_stream(HSTREAM, int) {}
 inline void AIL_close_stream(HSTREAM) {}
+inline void AIL_init_sample(HSAMPLE) {}
 
+inline void AIL_set_named_sample_file(
+    HSAMPLE,
+    char*,
+    void*)
+{
+}
+
+inline void AIL_start_sample(HSAMPLE) {}
+
+inline void AIL_stop_sample(HSAMPLE) {}
+
+inline void AIL_resume_sample(HSAMPLE) {}
+
+inline void AIL_end_sample(HSAMPLE) {}
+
+inline void AIL_sample_volume_pan(
+    HSAMPLE,
+    float*,
+    float*)
+{
+}
+inline void AIL_set_sample_loop_count(
+    HSAMPLE,
+    U32)
+{
+}
+
+inline U32 AIL_sample_loop_count(
+    HSAMPLE)
+{
+    return 0;
+}
+inline void AIL_set_sample_ms_position(
+    HSAMPLE,
+    U32)
+{
+}
+
+inline void AIL_sample_ms_position(
+    HSAMPLE,
+    U32*,
+    U32*)
+{
+}
+inline void AIL_set_sample_user_data(
+    HSAMPLE,
+    U32,
+    S32)
+{
+}
+
+inline S32 AIL_sample_user_data(
+    HSAMPLE,
+    U32)
+{
+    return 0;
+}
+inline U32 AIL_sample_playback_rate(
+    HSAMPLE)
+{
+    return 0;
+}
+
+inline void AIL_set_sample_volume_pan(
+    HSAMPLE,
+    float,
+    float)
+{
+}
 inline int AIL_stream_status(HSTREAM)
 {
     return 0;
 }
 
+#ifndef WAVE_FORMAT_IMA_ADPCM
+#define WAVE_FORMAT_IMA_ADPCM 0x0011
+#endif
+
+inline int AIL_WAV_info(
+    void*,
+    AILSOUNDINFO*)
+{
+    return 0;
+}
 #endif
 
 
