@@ -21,8 +21,8 @@ jobs:
       - name: Sync submodules
         run: |
           git submodule sync --recursive
-          git submodule update --init --recursive
-
+          git submodule update --init --recursive --remote
+        
       - name: Disable DXVK native windowing
         run: |
           python3 - <<'PY'
