@@ -197,7 +197,7 @@ inline void AIL_set_sample_ms_position(
 inline void AIL_sample_ms_position(
     HSAMPLE,
     S32*,
-    S232*)
+    S32*)
 {
 }
 inline void AIL_set_sample_user_data(
