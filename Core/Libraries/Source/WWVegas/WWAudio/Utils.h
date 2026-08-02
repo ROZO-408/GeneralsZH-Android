@@ -43,6 +43,7 @@
 #pragma warning (pop)
 #else
 #include "MilesStub.h"
+#include "threads_compat.h"
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
