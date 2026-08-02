@@ -82,23 +82,7 @@ elseif(ANDROID)
     if(EXISTS "${DXVK_LOCAL_FORK_DIR}/meson.build")
         set(DXVK_SOURCE_DIR "${DXVK_LOCAL_FORK_DIR}")
         message(STATUS "Using local DXVK source: ${DXVK_SOURCE_DIR}")
-
-        execute_process(
-            COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply --reverse --check
-                    "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
-            RESULT_VARIABLE DXVK_PATCH_ALREADY_APPLIED
-            ERROR_QUIET)
-
-        if(NOT DXVK_PATCH_ALREADY_APPLIED EQUAL 0)
-            execute_process(
-                COMMAND git -C "${DXVK_LOCAL_FORK_DIR}" apply
-                        "${CMAKE_SOURCE_DIR}/Patches/dxvk-android.patch"
-                RESULT_VARIABLE DXVK_PATCH_RESULT)
-
-            if(NOT DXVK_PATCH_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to apply Android DXVK patch.")
-            endif()
-        endif()
+        message(STATUS "Using pre-patched Android DXVK fork")
     else()
         message(FATAL_ERROR
             "DXVK source not found: ${DXVK_LOCAL_FORK_DIR}\n"
