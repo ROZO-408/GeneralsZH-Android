@@ -324,6 +324,71 @@ inline void AIL_set_3D_sample_playback_rate(
     U32)
 {
 }
+inline HSTREAM AIL_open_stream(
+    HDIGDRIVER,
+    const char*,
+    U32)
+{
+    return nullptr;
+}
+
+inline void AIL_stream_volume_pan(
+    HSTREAM,
+    float*,
+    float*)
+{
+}
+
+inline void AIL_set_stream_volume_pan(
+    HSTREAM,
+    float,
+    float)
+{
+}
+
+inline void AIL_set_stream_loop_block(
+    HSTREAM,
+    S32,
+    S32)
+{
+}
+
+inline void AIL_set_stream_loop_count(
+    HSTREAM,
+    U32)
+{
+}
+
+inline U32 AIL_stream_loop_count(
+    HSTREAM)
+{
+    return 0;
+}
+
+inline void AIL_set_stream_ms_position(
+    HSTREAM,
+    U32)
+{
+}
+
+inline void AIL_stream_ms_position(
+    HSTREAM,
+    S32*,
+    S32*)
+{
+}
+
+inline U32 AIL_stream_playback_rate(
+    HSTREAM)
+{
+    return 0;
+}
+
+inline void AIL_set_stream_playback_rate(
+    HSTREAM,
+    U32)
+{
+}
 #endif
 
 
