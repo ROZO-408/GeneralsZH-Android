@@ -37,6 +37,7 @@
     #define __stdcall
     #define __cdecl
     #define AILCALLBACK
+    #define DP_FILTER 0
 #else
     #define AILCALLBACK
 #endif
@@ -91,7 +92,7 @@ inline void AIL_set_sample_processor(
 
 inline void AIL_set_filter_sample_preference(
     HSAMPLE,
-    int,
+    const char*,
     float)
 {
 }
