@@ -56,6 +56,7 @@
 // Miles Sound System type stubs (not including callback typedefs - those are defined in AudioEvents.h)
 typedef void* HDIGDRIVER;
 typedef void* HPROVIDER;
+typedef void* HSTREAM;
 typedef void* HSAMPLE;
 typedef void* H3DSAMPLE;
 typedef void* H3DPOBJECT;
@@ -81,7 +82,7 @@ struct DRIVER_INFO_STRUCT {
 
 // No-op defines for AIL functions
 #define AIL_set_sample_processor(sample, processor, filter) \
-    do { (void)(sample); (void)(processor); (void)(filter); } while(0)
+    do { (void)sample); (void)(processor); (void)(filter); } while(0)
 
 #define AIL_set_filter_sample_preference(sample, pref, value) \
     do { (void)(sample); (void)(pref); (void)(value); } while(0)
