@@ -57,6 +57,7 @@ typedef void *HANDLE;
 #define DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
 #else
 typedef void *HANDLE;
+#ifndef DECLARE_HANDLE
 #define DECLARE_HANDLE(name) typedef HANDLE name
 #endif
 #endif
