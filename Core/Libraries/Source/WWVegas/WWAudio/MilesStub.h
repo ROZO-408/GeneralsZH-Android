@@ -51,6 +51,12 @@
     typedef signed int     S32;
     typedef float          F32;
     typedef double         F64;
+    typedef void* HANDLE;
+
+    typedef struct
+    {
+        int dummy;
+    } CRITICAL_SECTION;
 #endif
 
 // Miles Sound System type stubs (not including callback typedefs - those are defined in AudioEvents.h)
@@ -82,7 +88,7 @@ struct DRIVER_INFO_STRUCT {
 
 // No-op defines for AIL functions
 #define AIL_set_sample_processor(sample, processor, filter) \
-    do { (void)sample); (void)(processor); (void)(filter); } while(0)
+    do { (void)(sample); (void)(processor); (void)(filter); } while(0)
 
 #define AIL_set_filter_sample_preference(sample, pref, value) \
     do { (void)(sample); (void)(pref); (void)(value); } while(0)
@@ -102,6 +108,17 @@ inline void AIL_set_3D_orientation(
     H3DSAMPLE,
     float, float, float,
     float, float, float) {}
+inline void AIL_enter() {}
+inline void AIL_leave() {}
+
+inline void AIL_start_stream(HSTREAM) {}
+inline void AIL_pause_stream(HSTREAM, int) {}
+inline void AIL_close_stream(HSTREAM) {}
+
+inline int AIL_stream_status(HSTREAM)
+{
+    return 0;
+}
 
 #endif
 
