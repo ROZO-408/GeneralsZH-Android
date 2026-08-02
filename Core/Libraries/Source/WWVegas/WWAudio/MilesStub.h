@@ -43,7 +43,6 @@
 
 // Windows type stubs
 #if !defined(_WIN32)
-    #define HANDLE void*
     typedef unsigned char  U8;
     typedef signed char    S8;
     typedef unsigned short U16;
