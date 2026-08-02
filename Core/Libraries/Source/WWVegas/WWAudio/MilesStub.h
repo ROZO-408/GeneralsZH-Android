@@ -93,7 +93,7 @@ inline void AIL_set_sample_processor(
 inline void AIL_set_filter_sample_preference(
     HSAMPLE,
     const char*,
-    float)
+    float*)
 {
 }
 
