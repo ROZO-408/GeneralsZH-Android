@@ -284,4 +284,12 @@ inline int _spawnl(int mode, const char* cmdname, const char* arg0, ...) {
 #define _MALLOC_H_
 #include <stdlib.h>
 #endif
+
+typedef pthread_mutex_t CRITICAL_SECTION;
+
+inline void InitializeCriticalSection(CRITICAL_SECTION*) {}
+inline void DeleteCriticalSection(CRITICAL_SECTION*) {}
+inline void EnterCriticalSection(CRITICAL_SECTION*) {}
+inline void LeaveCriticalSection(CRITICAL_SECTION*) {}
+
 #endif
