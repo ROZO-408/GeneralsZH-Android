@@ -59,7 +59,8 @@
 typedef void* HDIGDRIVER;
 typedef void* HPROVIDER;
 typedef void* HSTREAM;
-typedef void* HSAMPLE;
+struct MilesSample;
+typedef MilesSample* HSAMPLE;
 typedef void* H3DSAMPLE;
 typedef void* H3DPOBJECT;
 typedef void* HTIMER;
