@@ -17,10 +17,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Sync submodules
         run: |
           git submodule sync --recursive
+          git submodule foreach --recursive "git fetch origin"
           git submodule update --init --recursive --remote
         
       - name: Disable DXVK native windowing
