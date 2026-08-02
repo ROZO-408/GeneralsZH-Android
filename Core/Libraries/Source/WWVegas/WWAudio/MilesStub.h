@@ -52,11 +52,6 @@
     typedef float          F32;
     typedef double         F64;
     typedef void* HANDLE;
-
-    typedef struct
-    {
-        int dummy;
-    } CRITICAL_SECTION;
 #endif
 
 // Miles Sound System type stubs (not including callback typedefs - those are defined in AudioEvents.h)
