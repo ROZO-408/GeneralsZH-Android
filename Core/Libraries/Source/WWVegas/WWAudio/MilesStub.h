@@ -108,13 +108,16 @@ inline void AIL_set_filter_sample_preference(
 {
 }
 
+#include "MilesOpenAL.h"
+
 inline HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
 {
-    return nullptr;
+    return MilesOpenAL::CreateSample();
 }
 
-inline void AIL_release_sample_handle(HSAMPLE)
+inline void AIL_release_sample_handle(HSAMPLE sample)
 {
+    MilesOpenAL::DestroySample(sample);
 }
 inline void AIL_set_3D_velocity_vector(
     H3DSAMPLE,
@@ -164,7 +167,10 @@ inline void AIL_set_named_sample_file(
 {
 }
 
-inline void AIL_start_sample(HSAMPLE) {}
+inline void AIL_start_sample(HSAMPLE sample)
+{
+    MilesOpenAL::Play(sample);
+}
 
 inline void AIL_stop_sample(HSAMPLE) {}
 
