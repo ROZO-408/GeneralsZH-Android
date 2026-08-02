@@ -94,14 +94,14 @@ struct DRIVER_INFO_STRUCT {
 };
 
 // No-op defines for AIL functions
-inline void AIL_set_sample_processor(
+void AIL_set_sample_processor(
     HSAMPLE,
     int,
     HPROVIDER)
 {
 }
 
-inline void AIL_set_filter_sample_preference(
+void AIL_set_filter_sample_preference(
     HSAMPLE,
     const char*,
     float*)
@@ -110,16 +110,16 @@ inline void AIL_set_filter_sample_preference(
 
 #include "MilesOpenAL.h"
 
-inline HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
+HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
 {
     return MilesOpenAL::CreateSample();
 }
 
-inline void AIL_release_sample_handle(HSAMPLE sample)
+void AIL_release_sample_handle(HSAMPLE sample)
 {
     MilesOpenAL::DestroySample(sample);
 }
-inline void AIL_set_3D_velocity_vector(
+void AIL_set_3D_velocity_vector(
     H3DSAMPLE,
     float,
     float,
@@ -127,38 +127,38 @@ inline void AIL_set_3D_velocity_vector(
 {
 }
 
-inline void AIL_set_3D_sample_distances(
+void AIL_set_3D_sample_distances(
     H3DSAMPLE,
     float,
     float)
 {
 }
 
-inline void AIL_set_3D_sample_effects_level(
+void AIL_set_3D_sample_effects_level(
     H3DSAMPLE,
     float)
 {
 }
 
 // Missing Miles API stubs
-inline void AIL_lock() {}
-inline void AIL_unlock() {}
+void AIL_lock() {}
+void AIL_unlock() {}
 
-inline void AIL_set_3D_position(H3DSAMPLE, float, float, float) {}
+void AIL_set_3D_position(H3DSAMPLE, float, float, float) {}
 
-inline void AIL_set_3D_orientation(
+void AIL_set_3D_orientation(
     H3DSAMPLE,
     float, float, float,
     float, float, float) {}
-inline void AIL_enter() {}
-inline void AIL_leave() {}
+void AIL_enter() {}
+void AIL_leave() {}
 
-inline void AIL_start_stream(HSTREAM) {}
-inline void AIL_pause_stream(HSTREAM, int) {}
-inline void AIL_close_stream(HSTREAM) {}
-inline void AIL_init_sample(HSAMPLE) {}
+void AIL_start_stream(HSTREAM) {}
+void AIL_pause_stream(HSTREAM, int) {}
+void AIL_close_stream(HSTREAM) {}
+void AIL_init_sample(HSAMPLE) {}
 
-inline void AIL_set_named_sample_file(
+void AIL_set_named_sample_file(
     HSAMPLE,
     char*,
     void*,
@@ -167,77 +167,77 @@ inline void AIL_set_named_sample_file(
 {
 }
 
-inline void AIL_start_sample(HSAMPLE sample)
+void AIL_start_sample(HSAMPLE sample)
 {
     MilesOpenAL::Play(sample);
 }
 
-inline void AIL_stop_sample(HSAMPLE) {}
+void AIL_stop_sample(HSAMPLE) {}
 
-inline void AIL_resume_sample(HSAMPLE) {}
+void AIL_resume_sample(HSAMPLE) {}
 
-inline void AIL_end_sample(HSAMPLE) {}
+void AIL_end_sample(HSAMPLE) {}
 
-inline void AIL_sample_volume_pan(
+void AIL_sample_volume_pan(
     HSAMPLE,
     float*,
     float*)
 {
 }
-inline void AIL_set_sample_loop_count(
+void AIL_set_sample_loop_count(
     HSAMPLE,
     U32)
 {
 }
 
-inline U32 AIL_sample_loop_count(
+U32 AIL_sample_loop_count(
     HSAMPLE)
 {
     return 0;
 }
-inline void AIL_set_sample_ms_position(
+void AIL_set_sample_ms_position(
     HSAMPLE,
     U32)
 {
 }
 
-inline void AIL_sample_ms_position(
+void AIL_sample_ms_position(
     HSAMPLE,
     S32*,
     S32*)
 {
 }
-inline void AIL_set_sample_user_data(
+void AIL_set_sample_user_data(
     HSAMPLE,
     U32,
     void*)
 {
 }
 
-inline void* AIL_sample_user_data(
+void* AIL_sample_user_data(
     HSAMPLE,
     U32)
 {
     return nullptr;
 }
-inline U32 AIL_sample_playback_rate(
+U32 AIL_sample_playback_rate(
     HSAMPLE)
 {
     return 0;
 }
 
-inline void AIL_set_sample_volume_pan(
+void AIL_set_sample_volume_pan(
     HSAMPLE,
     float,
     float)
 {
 }
-inline void AIL_set_sample_playback_rate(
+void AIL_set_sample_playback_rate(
     HSAMPLE,
     U32)
 {
 }
-inline int AIL_stream_status(HSTREAM)
+int AIL_stream_status(HSTREAM)
 {
     return 0;
 }
@@ -246,92 +246,92 @@ inline int AIL_stream_status(HSTREAM)
 #define WAVE_FORMAT_IMA_ADPCM 0x0011
 #endif
 
-inline int AIL_WAV_info(
+int AIL_WAV_info(
     void*,
     AILSOUNDINFO*)
 {
     return 0;
 }
-inline U32 AIL_set_3D_sample_file(
+U32 AIL_set_3D_sample_file(
     H3DSAMPLE,
     void*)
 {
     return 1;
 }
 
-inline void AIL_start_3D_sample(H3DSAMPLE) {}
-inline void AIL_stop_3D_sample(H3DSAMPLE) {}
-inline void AIL_resume_3D_sample(H3DSAMPLE) {}
-inline void AIL_end_3D_sample(H3DSAMPLE) {}
+void AIL_start_3D_sample(H3DSAMPLE) {}
+void AIL_stop_3D_sample(H3DSAMPLE) {}
+void AIL_resume_3D_sample(H3DSAMPLE) {}
+void AIL_end_3D_sample(H3DSAMPLE) {}
 
-inline void AIL_set_3D_sample_volume(
+void AIL_set_3D_sample_volume(
     H3DSAMPLE,
     float)
 {
 }
 
-inline float AIL_3D_sample_volume(
+float AIL_3D_sample_volume(
     H3DSAMPLE)
 {
     return 0.0f;
 }
 
-inline void AIL_set_3D_sample_loop_count(
+void AIL_set_3D_sample_loop_count(
     H3DSAMPLE,
     U32)
 {
 }
 
-inline U32 AIL_3D_sample_loop_count(
+U32 AIL_3D_sample_loop_count(
     H3DSAMPLE)
 {
     return 0;
 }
 
-inline void AIL_set_3D_sample_offset(
+void AIL_set_3D_sample_offset(
     H3DSAMPLE,
     U32)
 {
 }
 
-inline U32 AIL_3D_sample_offset(
+U32 AIL_3D_sample_offset(
     H3DSAMPLE)
 {
     return 0;
 }
 
-inline U32 AIL_3D_sample_length(
+U32 AIL_3D_sample_length(
     H3DSAMPLE)
 {
     return 0;
 }
 
-inline void AIL_set_3D_object_user_data(
+void AIL_set_3D_object_user_data(
     H3DSAMPLE,
     U32,
     void*)
 {
 }
 
-inline void* AIL_3D_object_user_data(
+void* AIL_3D_object_user_data(
     H3DSAMPLE,
     U32)
 {
     return nullptr;
 }
 
-inline U32 AIL_3D_sample_playback_rate(
+U32 AIL_3D_sample_playback_rate(
     H3DSAMPLE)
 {
     return 0;
 }
 
-inline void AIL_set_3D_sample_playback_rate(
+void AIL_set_3D_sample_playback_rate(
     H3DSAMPLE,
     U32)
 {
 }
-inline HSTREAM AIL_open_stream(
+HSTREAM AIL_open_stream(
     HDIGDRIVER,
     const char*,
     U32)
@@ -339,59 +339,59 @@ inline HSTREAM AIL_open_stream(
     return nullptr;
 }
 
-inline void AIL_stream_volume_pan(
+void AIL_stream_volume_pan(
     HSTREAM,
     float*,
     float*)
 {
 }
 
-inline void AIL_set_stream_volume_pan(
+void AIL_set_stream_volume_pan(
     HSTREAM,
     float,
     float)
 {
 }
 
-inline void AIL_set_stream_loop_block(
+void AIL_set_stream_loop_block(
     HSTREAM,
     S32,
     S32)
 {
 }
 
-inline void AIL_set_stream_loop_count(
+void AIL_set_stream_loop_count(
     HSTREAM,
     U32)
 {
 }
 
-inline U32 AIL_stream_loop_count(
+U32 AIL_stream_loop_count(
     HSTREAM)
 {
     return 0;
 }
 
-inline void AIL_set_stream_ms_position(
+void AIL_set_stream_ms_position(
     HSTREAM,
     U32)
 {
 }
 
-inline void AIL_stream_ms_position(
+void AIL_stream_ms_position(
     HSTREAM,
     S32*,
     S32*)
 {
 }
 
-inline U32 AIL_stream_playback_rate(
+U32 AIL_stream_playback_rate(
     HSTREAM)
 {
     return 0;
 }
 
-inline void AIL_set_stream_playback_rate(
+void AIL_set_stream_playback_rate(
     HSTREAM,
     U32)
 {
