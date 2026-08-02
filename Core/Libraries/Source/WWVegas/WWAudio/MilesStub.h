@@ -157,7 +157,9 @@ inline void AIL_init_sample(HSAMPLE) {}
 inline void AIL_set_named_sample_file(
     HSAMPLE,
     char*,
-    void*)
+    void*,
+    U32,
+    U32)
 {
 }
 
@@ -194,22 +196,22 @@ inline void AIL_set_sample_ms_position(
 
 inline void AIL_sample_ms_position(
     HSAMPLE,
-    U32*,
-    U32*)
+    S32*,
+    S232*)
 {
 }
 inline void AIL_set_sample_user_data(
     HSAMPLE,
     U32,
-    S32)
+    void*)
 {
 }
 
-inline S32 AIL_sample_user_data(
+inline void* AIL_sample_user_data(
     HSAMPLE,
     U32)
 {
-    return 0;
+    return nullptr;
 }
 inline U32 AIL_sample_playback_rate(
     HSAMPLE)
@@ -221,6 +223,11 @@ inline void AIL_set_sample_volume_pan(
     HSAMPLE,
     float,
     float)
+{
+}
+inline void AIL_set_sample_playback_rate(
+    HSAMPLE,
+    U32)
 {
 }
 inline int AIL_stream_status(HSTREAM)
@@ -237,6 +244,85 @@ inline int AIL_WAV_info(
     AILSOUNDINFO*)
 {
     return 0;
+}
+inline U32 AIL_set_3D_sample_file(
+    H3DSAMPLE,
+    void*)
+{
+    return 1;
+}
+
+inline void AIL_start_3D_sample(H3DSAMPLE) {}
+inline void AIL_stop_3D_sample(H3DSAMPLE) {}
+inline void AIL_resume_3D_sample(H3DSAMPLE) {}
+inline void AIL_end_3D_sample(H3DSAMPLE) {}
+
+inline void AIL_set_3D_sample_volume(
+    H3DSAMPLE,
+    float)
+{
+}
+
+inline float AIL_3D_sample_volume(
+    H3DSAMPLE)
+{
+    return 0.0f;
+}
+
+inline void AIL_set_3D_sample_loop_count(
+    H3DSAMPLE,
+    U32)
+{
+}
+
+inline U32 AIL_3D_sample_loop_count(
+    H3DSAMPLE)
+{
+    return 0;
+}
+
+inline void AIL_set_3D_sample_offset(
+    H3DSAMPLE,
+    U32)
+{
+}
+
+inline U32 AIL_3D_sample_offset(
+    H3DSAMPLE)
+{
+    return 0;
+}
+
+inline U32 AIL_3D_sample_length(
+    H3DSAMPLE)
+{
+    return 0;
+}
+
+inline void AIL_set_3D_object_user_data(
+    H3DSAMPLE,
+    U32,
+    void*)
+{
+}
+
+inline void* AIL_3D_object_user_data(
+    H3DSAMPLE,
+    U32)
+{
+    return nullptr;
+}
+
+inline U32 AIL_3D_sample_playback_rate(
+    H3DSAMPLE)
+{
+    return 0;
+}
+
+inline void AIL_set_3D_sample_playback_rate(
+    H3DSAMPLE,
+    U32)
+{
 }
 #endif
 
