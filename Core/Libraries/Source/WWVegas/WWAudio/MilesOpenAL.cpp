@@ -1,57 +1,40 @@
+#include "MilesStub.h"
 #include "MilesOpenAL.h"
 
-#if defined(SAGE_USE_OPENAL)
+// ============================================================================
+// Sample management
+// ============================================================================
 
-namespace MilesOpenAL
+HSAMPLE AIL_allocate_sample_handle(HDIGDRIVER)
 {
-
-bool Initialize()
-{
-    return true;
+    return MilesOpenAL::CreateSample();
 }
 
-void Shutdown()
+void AIL_release_sample_handle(HSAMPLE sample)
 {
+    MilesOpenAL::DestroySample(sample);
 }
 
-MilesSample* CreateSample()
-{
-    return new MilesSample();
-}
-
-void DestroySample(MilesSample* sample)
-{
-    delete sample;
-}
-
-void Play(MilesSample*)
+void AIL_init_sample(HSAMPLE)
 {
 }
 
-void Stop(MilesSample*)
+void AIL_start_sample(HSAMPLE sample)
 {
+    MilesOpenAL::Play(sample);
 }
 
-void Pause(MilesSample*)
+void AIL_stop_sample(HSAMPLE sample)
 {
+    MilesOpenAL::Stop(sample);
 }
 
-void SetVolume(MilesSample*, float)
+void AIL_resume_sample(HSAMPLE sample)
 {
+    MilesOpenAL::Play(sample);
 }
 
-void SetPan(MilesSample*, float)
+void AIL_end_sample(HSAMPLE sample)
 {
+    MilesOpenAL::Stop(sample);
 }
-
-void SetLooping(MilesSample*, bool)
-{
-}
-
-void SetPosition(MilesSample*, float, float, float)
-{
-}
-
-}
-
-#endif
