@@ -14,7 +14,7 @@ void Shutdown()
 
 MilesSample* CreateSample()
 {
-    auto* sample = new MilesSample;
+    MilesSample* sample = new MilesSample();
 
     alGenSources(1, &sample->source);
 
@@ -65,7 +65,6 @@ void SetVolume(MilesSample* sample, float volume)
         return;
 
     sample->volume = volume;
-
     alSourcef(sample->source, AL_GAIN, volume);
 }
 
@@ -75,7 +74,6 @@ void SetPan(MilesSample* sample, float pan)
         return;
 
     sample->pan = pan;
-
     alSource3f(sample->source, AL_POSITION, pan, 0.0f, 0.0f);
 }
 
@@ -85,7 +83,6 @@ void SetLooping(MilesSample* sample, bool loop)
         return;
 
     sample->looping = loop;
-
     alSourcei(sample->source, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
 }
 
@@ -97,4 +94,4 @@ void SetPosition(MilesSample* sample, float x, float y, float z)
     alSource3f(sample->source, AL_POSITION, x, y, z);
 }
 
-}
+} // namespace MilesOpenAL
