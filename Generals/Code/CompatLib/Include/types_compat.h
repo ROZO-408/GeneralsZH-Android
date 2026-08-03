@@ -51,15 +51,12 @@ typedef DWORD COLORREF;
 // We only define Windows-specific types that bittype.h doesn't have
 
 // DECLARE_HANDLE macro (from windef.h) - creates opaque handle types
-#ifndef DECLARE_HANDLE
 #ifdef STRICT
-typedef void *HANDLE;
+typedef void* HANDLE;
 #define DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
 #else
-typedef void *HANDLE;
-#ifndef DECLARE_HANDLE
+typedef void* HANDLE;
 #define DECLARE_HANDLE(name) typedef HANDLE name
-#endif
 #endif
 
 #ifndef _HANDLE_TYPES_DEFINED
